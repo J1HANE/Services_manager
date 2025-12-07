@@ -1,6 +1,8 @@
+// src/pages/LandingPage.jsx (version simplifiée sans footer)
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Shield, Clock, Users, Hammer, Paintbrush, Zap, Star, CheckCircle, ChevronDown, Home, Plus, User } from 'lucide-react';
+import Footer from '../components/Footer'; // Import du footer séparé
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
@@ -134,6 +136,7 @@ export default function LandingPage() {
           scrolled ? 'shadow-lg' : ''
         }`}
       >
+        {/* ... Header content (identique à avant) ... */}
         <div className="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -237,6 +240,7 @@ export default function LandingPage() {
 
       {/* Hero Section avec Slides */}
       <section className="relative w-full h-screen overflow-hidden">
+        {/* ... Hero content (identique) ... */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -306,6 +310,7 @@ export default function LandingPage() {
 
       {/* Info Section */}
       <section className="px-4 py-12 sm:px-6 lg:px-8 bg-white/80 backdrop-blur-sm">
+        {/* ... Info content (identique) ... */}
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-wrap items-center justify-center gap-12 text-center">
             <div className="flex flex-col items-center gap-3">
@@ -341,6 +346,7 @@ export default function LandingPage() {
 
       {/* CTA Buttons Section */}
       <section className="px-4 py-16 sm:px-6 lg:px-8 bg-gradient-to-br from-amber-50 via-orange-50 to-green-50">
+        {/* ... CTA content (identique) ... */}
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="mb-6 text-4xl text-amber-900">
             Commencez Maintenant
@@ -370,6 +376,7 @@ export default function LandingPage() {
 
       {/* Services Section */}
       <section id="services" className="px-4 py-20 sm:px-6 lg:px-8 bg-white/50">
+        {/* ... Services content (identique) ... */}
         <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -421,6 +428,7 @@ export default function LandingPage() {
 
       {/* About Section */}
       <section id="about" className="px-4 py-20 sm:px-6 lg:px-8">
+        {/* ... About content (identique) ... */}
         <div className="mx-auto max-w-7xl">
           <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
             <motion.div
@@ -498,6 +506,7 @@ export default function LandingPage() {
 
       {/* Values Section */}
       <section id="values" className="px-4 py-20 sm:px-6 lg:px-8 bg-white/50">
+        {/* ... Values content (identique) ... */}
         <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -535,6 +544,7 @@ export default function LandingPage() {
 
       {/* Testimonials Section */}
       <section id="testimonials" className="px-4 py-20 sm:px-6 lg:px-8">
+        {/* ... Testimonials content (identique) ... */}
         <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -584,6 +594,7 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="px-4 py-20 sm:px-6 lg:px-8 bg-gradient-to-r from-amber-600 via-orange-600 to-green-700">
+        {/* ... CTA content (identique) ... */}
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -617,90 +628,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer animé */}
-      <motion.footer
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="px-4 py-12 text-white bg-amber-900 sm:px-6 lg:px-8"
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-4">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
-                  <Hammer className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-2xl">ServicePro</span>
-              </div>
-              <p className="text-white/80">
-                La plateforme de confiance pour trouver les meilleurs professionnels.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="mb-4 text-lg">Services</h4>
-              <ul className="space-y-2 text-white/80">
-                <li>
-                  <a href="#" className="transition-colors hover:text-white">
-                    Menuiserie
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="transition-colors hover:text-white">
-                    Peinture
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="transition-colors hover:text-white">
-                    Électricité
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="mb-4 text-lg">À Propos</h4>
-              <ul className="space-y-2 text-white/80">
-                <li>
-                  <a href="#about" className="transition-colors hover:text-white">
-                    Notre mission
-                  </a>
-                </li>
-                <li>
-                  <a href="#values" className="transition-colors hover:text-white">
-                    Nos valeurs
-                  </a>
-                </li>
-                <li>
-                  <a href="#testimonials" className="transition-colors hover:text-white">
-                    Témoignages
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="mb-4 text-lg">Contact</h4>
-              <ul className="space-y-2 text-white/80">
-                <li className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  <span>Support 24/7</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  <span>100% Sécurisé</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="pt-8 text-center border-t border-white/20 text-white/80">
-            <p>&copy; 2025 ServicePro. Tous droits réservés.</p>
-          </div>
-        </div>
-      </motion.footer>
+      {/* Footer séparé */}
+      <Footer />
     </div>
   );
 }
