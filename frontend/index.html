@@ -5,9 +5,46 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ServicePro - Trouvez les meilleurs professionnels</title>
+    
+    <!-- Leaflet CSS (IMPORTANT pour la carte) -->
+    <link 
+      rel="stylesheet" 
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    
+    <!-- Fonts optionnelles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Styles pour les icônes Leaflet -->
+    <style>
+      .leaflet-default-icon-path {
+        background-image: url(https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png);
+      }
+      .leaflet-default-shadow-path {
+        background-image: url(https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png);
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Script pour corriger les icônes Leaflet -->
+    <script>
+      // Fix pour les icônes Leaflet qui se chargent après le CSS
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof L !== 'undefined') {
+          delete L.Icon.Default.prototype._getIconUrl;
+          L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+            iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+          });
+        }
+      });
+    </script>
   </body>
 </html>

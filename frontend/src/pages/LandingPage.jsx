@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Shield, Clock, Users, Hammer, Paintbrush, Zap, Star, CheckCircle, ChevronDown, Home, Plus, User } from 'lucide-react';
 import Footer from '../components/Footer'; // Import du footer séparé
+import { Header } from '../components/Header';
+import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
@@ -125,118 +127,10 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-green-50" style={{ fontFamily: 'Times New Roman, serif' }}>
-      {/* Header animé avec menus déroulants */}
-      <motion.header
-        style={{
-          opacity: headerOpacity,
-          backgroundColor: headerBackground,
-        }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-shadow duration-300 ${
-          scrolled ? 'shadow-lg' : ''
-        }`}
-      >
-        {/* ... Header content (identique à avant) ... */}
-        <div className="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-amber-600 to-orange-700">
-                <Hammer className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl text-amber-900">ServicePro</span>
-            </div>
-            
-            <nav className="items-center hidden gap-6 md:flex">
-              {/* Accueil */}
-              <a href="#" className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700">
-                <Home className="w-4 h-4" />
-                <span>Accueil</span>
-              </a>
-
-              {/* Services Menu */}
-              <div 
-                className="relative"
-                onMouseEnter={() => setServicesOpen(true)}
-                onMouseLeave={() => setServicesOpen(false)}
-              >
-                <button className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700">
-                  <span>Services</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence>
-                  {servicesOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute left-0 w-48 py-2 mt-2 bg-white border border-orange-100 rounded-lg shadow-xl top-full"
-                    >
-                      <a href="#services" className="flex items-center gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50">
-                        <Hammer className="w-4 h-4 text-orange-600" />
-                        <span>Menuiserie</span>
-                      </a>
-                      <a href="#services" className="flex items-center gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50">
-                        <Paintbrush className="w-4 h-4 text-orange-600" />
-                        <span>Peinture</span>
-                      </a>
-                      <a href="#services" className="flex items-center gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50">
-                        <Zap className="w-4 h-4 text-orange-600" />
-                        <span>Électricité</span>
-                      </a>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Plus Menu */}
-              <div 
-                className="relative"
-                onMouseEnter={() => setPlusOpen(true)}
-                onMouseLeave={() => setPlusOpen(false)}
-              >
-                <button className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700">
-                  <span>Plus</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${plusOpen ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence>
-                  {plusOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute left-0 w-56 py-2 mt-2 bg-white border border-orange-100 rounded-lg shadow-xl top-full"
-                    >
-                      <a href="#" className="flex items-center gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50">
-                        <Plus className="w-4 h-4 text-orange-600" />
-                        <span>Publier un service</span>
-                      </a>
-                      <a href="#" className="flex items-center gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50">
-                        <User className="w-4 h-4 text-orange-600" />
-                        <span>Mon profil</span>
-                      </a>
-                      <a href="#" className="flex items-center gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50">
-                        <Shield className="w-4 h-4 text-orange-600" />
-                        <span>Espace</span>
-                      </a>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </nav>
-
-            <div className="flex items-center gap-3">
-              <button className="px-4 py-2 transition-colors text-amber-900 hover:text-orange-700">
-                Connexion
-              </button>
-              <button className="px-6 py-2 text-white transition-all rounded-lg shadow-md bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 hover:shadow-lg">
-                Commencer
-              </button>
-            </div>
-          </div>
-        </div>
-      </motion.header>
+     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-green-50" style={{ fontFamily: 'Times New Roman, serif' }}>
+      {/* Utiliser le Header component */}
+      <Header />{/* Header animé avec menus déroulants */}
+     
 
       {/* Hero Section avec Slides */}
       <section className="relative w-full h-screen overflow-hidden">
