@@ -10,54 +10,74 @@ class Service extends Model
     use HasFactory;
 
     protected $fillable = [
-        'intervenant_id', 
-        'type_service', 
-        'titre', 
+        'intervenant_id',
+        'type_service',
+        'titre',
         'description',
-        'est_actif', 
-        'statut', 
-        'ville', 
+        'est_actif',
+        'statut',
+        'ville',
         'adresse',
-        'latitude', 
-        'longitude', 
-        'rayon_km', 
-        'parametres_specifiques', // Champ JSON
-        'nb_avis', 
-        'moyenne_note', 
-        'moyenne_ponctualite', 
-        'moyenne_proprete', 
-        'moyenne_qualite'
+        'latitude',
+        'longitude',
+        'rayon_km',
+        'parametres_specifiques',
+        'nb_avis',
+        'moyenne_note',
+        'moyenne_ponctualite',
+        'moyenne_proprete',
+        'moyenne_qualite',
     ];
 
     protected $casts = [
         'est_actif' => 'boolean',
-        'parametres_specifiques' => 'array', // Conversion automatique JSON <-> Array
-        'latitude' => 'float',
-        'longitude' => 'float',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
         'rayon_km' => 'integer',
-        'nb_avis' => 'integer'
+        'parametres_specifiques' => 'array',
+        'nb_avis' => 'integer',
+        'moyenne_note' => 'integer',
+        'moyenne_ponctualite' => 'integer',
+        'moyenne_proprete' => 'integer',
+        'moyenne_qualite' => 'integer',
     ];
 
-    // --- RELATIONS ---
-    public function intervenant() {
+    // Relations
+    public function intervenant()
+    {
         return $this->belongsTo(User::class, 'intervenant_id');
     }
 
-    public function disponibilites() {
+    public function serviceCategories()
+    {
+        return $this->hasMany(ServiceCategorie::class);
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(Categorie::class, 'service_categories', 'service_id', 'category_id')
+            ->withPivot('prix', 'unite_prix')
+            ->withTimestamps();
+    }
+
+    public function demandes()
+    {
+        return $this->hasMany(Demande::class);
+    }
+
+    public function disponibilites()
+    {
         return $this->hasMany(Disponibilite::class);
     }
 
-    public function categories() {
-        return $this->belongsToMany(Category::class, 'service_categories')
-                    ->withPivot('id', 'prix', 'unite_prix')
-                    ->withTimestamps();
+    // Scopes
+    public function scopeActif($query)
+    {
+        return $query->where('est_actif', true)->where('statut', 'actif');
     }
-    
-    public function demandes() {
-        return $this->hasMany(Demande::class);
-    }
-    
-    public function justificatifs() {
-        return $this->hasMany(Justificatif::class);
+
+    public function scopeByType($query, $type)
+    {
+        return $query->where('type_service', $type);
     }
 }

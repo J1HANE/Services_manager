@@ -6,23 +6,32 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class ServiceCategory extends Pivot
 {
-    // Important car ta table a une colonne 'id' auto-incrémentée
-    public $incrementing = true;
     protected $table = 'service_categories';
 
     protected $fillable = [
-        'service_id', 
-        'category_id', 
-        'prix', 
-        'unite_prix'
+        'service_id',
+        'category_id',
+        'prix',
+        'unite_prix',
     ];
 
-    // --- RELATIONS ---
-    public function service() {
+    protected $casts = [
+        'prix' => 'decimal:2',
+    ];
+
+    // Relations
+    public function service()
+    {
         return $this->belongsTo(Service::class);
     }
 
-    public function category() {
-        return $this->belongsTo(Category::class);
+    public function categorie()
+    {
+        return $this->belongsTo(Categorie::class, 'category_id');
+    }
+
+    public function demandeItems()
+    {
+        return $this->hasMany(DemandeItem::class);
     }
 }

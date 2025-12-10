@@ -9,17 +9,18 @@ class Reclamation extends Model
 {
     use HasFactory;
 
-    protected $table = 'reclamation'; // Force le nom singulier
+    protected $table = 'reclamation';
 
     protected $fillable = [
-        'evaluation_id', 
-        'sujet', 
-        'description', 
-        'justificatifs'
+        'evaluation_id',
+        'sujet',
+        'description',
+        'justificatifs',
     ];
 
-    // --- RELATIONS ---
-    public function evaluation() {
+    // Relations
+    public function evaluation()
+    {
         return $this->belongsTo(Evaluation::class);
     }
 }
