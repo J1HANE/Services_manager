@@ -10,18 +10,25 @@ class DemandeItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'demande_id', 
-        'service_categorie_id', 
-        'quantite', 
-        'prix_total'
+        'demande_id',
+        'service_categorie_id',
+        'quantite',
+        'prix_total',
     ];
 
-    // --- RELATIONS ---
-    public function demande() {
+    protected $casts = [
+        'quantite' => 'decimal:2',
+        'prix_total' => 'decimal:2',
+    ];
+
+    // Relations
+    public function demande()
+    {
         return $this->belongsTo(Demande::class);
     }
 
-    public function serviceCategory() {
-        return $this->belongsTo(ServiceCategory::class, 'service_categorie_id');
+    public function serviceCategorie()
+    {
+        return $this->belongsTo(ServiceCategorie::class);
     }
 }

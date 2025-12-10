@@ -12,24 +12,38 @@ class Disponibilite extends Model
     protected $table = 'disponibilites'; // Pluriel explicite
 
     protected $fillable = [
-        'service_id', 
-        'type',             // 'semaine' ou 'date'
-        'jour_semaine', 
-        'date_specifique', 
-        'est_disponible', 
-        'raison', 
-        'heure_debut', 
-        'heure_fin'
+        'service_id',
+        'type_disponibilite',
+        'jour_semaine',
+        'date_exclusion',
+        'raison',
     ];
 
     protected $casts = [
-        'date_specifique' => 'date',
-        'est_disponible' => 'boolean',
-        'jour_semaine' => 'integer'
+        'jour_semaine' => 'integer',
+        'date_exclusion' => 'date',
     ];
 
-    // --- RELATIONS ---
-    public function service() {
+    // Relations
+    public function service()
+    {
         return $this->belongsTo(Service::class);
+    }
+
+    // Scopes
+    public function scopeRegular($query)
+    {
+        return $query->where('type_disponibilite', 'regular');
+    }
+
+    public function scopeException($query)
+    {
+        return $query->where('type_disponibilite', 'exception');
+    }
+
+    public function scopeForDay($query, $day)
+    {
+        return $query->where('type_disponibilite', 'regular')
+            ->where('jour_semaine', $day);
     }
 }
