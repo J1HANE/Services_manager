@@ -14,6 +14,8 @@ class Service extends Model
         'type_service',
         'titre',
         'description',
+        'image_principale',
+        'images_supplementaires',
         'est_actif',
         'statut',
         'ville',
@@ -22,11 +24,6 @@ class Service extends Model
         'longitude',
         'rayon_km',
         'parametres_specifiques',
-        'nb_avis',
-        'moyenne_note',
-        'moyenne_ponctualite',
-        'moyenne_proprete',
-        'moyenne_qualite',
     ];
 
     protected $casts = [
@@ -35,11 +32,7 @@ class Service extends Model
         'longitude' => 'decimal:8',
         'rayon_km' => 'integer',
         'parametres_specifiques' => 'array',
-        'nb_avis' => 'integer',
-        'moyenne_note' => 'integer',
-        'moyenne_ponctualite' => 'integer',
-        'moyenne_proprete' => 'integer',
-        'moyenne_qualite' => 'integer',
+        'images_supplementaires' => 'array',
     ];
 
     // Relations
@@ -68,6 +61,55 @@ class Service extends Model
     public function disponibilites()
     {
         return $this->hasMany(Disponibilite::class);
+    }
+
+    public function evaluations()
+    {
+        // Evaluations are linked to demandes, not directly to services
+        return $this->hasManyThrough(
+            Evaluation::class,
+            Demande::class,
+            'service_id',    // Foreign key on demandes table
+            'demande_id',    // Foreign key on evaluations table
+            'id',            // Local key on services table
+            'id'             // Local key on demandes table
+        );
+    }
+
+    // Calculated Attributes (Accessors)
+    public function getNoteMoyenneAttribute()
+    {
+        return $this->evaluations()
+            ->where('cible', 'intervenant')
+            ->avg('note_moyenne') ?? 0;
+    }
+
+    public function getNbAvisAttribute()
+    {
+        return $this->evaluations()
+            ->where('cible', 'intervenant')
+            ->count();
+    }
+
+    public function getMoyennePonctualiteAttribute()
+    {
+        return $this->evaluations()
+            ->where('cible', 'intervenant')
+            ->avg('note_ponctualite') ?? 0;
+    }
+
+    public function getMoyennePropreteAttribute()
+    {
+        return $this->evaluations()
+            ->where('cible', 'intervenant')
+            ->avg('note_proprete') ?? 0;
+    }
+
+    public function getMoyenneQualiteAttribute()
+    {
+        return $this->evaluations()
+            ->where('cible', 'intervenant')
+            ->avg('note_qualite') ?? 0;
     }
 
     // Scopes

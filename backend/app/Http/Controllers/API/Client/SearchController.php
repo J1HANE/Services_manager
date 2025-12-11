@@ -23,8 +23,10 @@ class SearchController extends Controller
         // Construire la requête pour récupérer les services actifs
         $query = Service::with([
             'intervenant' => function ($query) {
-                $query->select('id', 'nom', 'prenom', 'surnom', 'photo_profil', 'note_moyenne', 'nb_avis', 'telephone');
-            }
+                $query->select('id', 'nom', 'prenom', 'surnom', 'photo_profil', 'telephone');
+            },
+            'evaluations', // Load evaluations for rating calculation
+            'categories'   // Load categories for pricing
         ])
             ->where('est_actif', true)
             ->where('statut', 'actif')
@@ -61,22 +63,47 @@ class SearchController extends Controller
 
             return [
                 'id' => $service->id,
-                'surnom' => $service->intervenant->surnom ?? ($service->intervenant->prenom . ' ' . $service->intervenant->nom),
-                'nom' => $service->intervenant->nom,
-                'prenom' => $service->intervenant->prenom,
-                'image' => $service->intervenant->photo_profil ?? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+                // Service information
+                'titre' => $service->titre ?? 'Service sans titre',
                 'description' => $service->description ?? '',
+                'type_service' => $service->type_service,
+
+                // Images (with fallbacks)
+                'image' => $service->image_principale
+                    ?? $service->intervenant->photo_profil
+                    ?? 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+                'images_supplementaires' => $service->images_supplementaires ?? [],
+
+                // Location
                 'ville' => $service->ville,
                 'adresse' => $service->adresse,
-                'service' => $service->type_service,
-                'rating' => $service->intervenant->note_moyenne ?? 0,
-                'nbAvis' => $service->intervenant->nb_avis ?? 0,
                 'lat' => (float) $service->latitude,
                 'lng' => (float) $service->longitude,
+
+                // Intervenant information
+                'intervenant' => [
+                    'id' => $service->intervenant->id,
+                    'nom' => $service->intervenant->nom,
+                    'prenom' => $service->intervenant->prenom,
+                    'surnom' => $service->intervenant->surnom ?? ($service->intervenant->prenom . ' ' . $service->intervenant->nom),
+                    'photo_profil' => $service->intervenant->photo_profil,
+                    'telephone' => $service->intervenant->telephone ?? '',
+                ],
+
+                // Calculated ratings from evaluations
+                'rating' => round($service->note_moyenne, 1),
+                'nbAvis' => $service->nb_avis,
+                'moyenne_ponctualite' => round($service->moyenne_ponctualite, 1),
+                'moyenne_proprete' => round($service->moyenne_proprete, 1),
+                'moyenne_qualite' => round($service->moyenne_qualite, 1),
+
+                // Pricing and experience
                 'tarif' => $this->formatTarif($service),
                 'experience' => $this->calculateExperience($service->intervenant),
-                'telephone' => $service->intervenant->telephone ?? '',
-                'titre' => $service->titre ?? '',
+
+                // Legacy fields for backward compatibility
+                'service' => $service->type_service,
+                'surnom' => $service->intervenant->surnom ?? ($service->intervenant->prenom . ' ' . $service->intervenant->nom),
             ];
         })->filter(); // Remove null values
 
