@@ -48,6 +48,18 @@ class UserSeeder extends Seeder
                 'note_moyenne' => 4.80,
                 'nb_avis' => 12,
             ],
+            // COMPTE INTERVENANT ISMAIL LYAMANI (KENITRA) - FOR TESTING
+            [
+                'email' => 'ismail.lyamani@test.com',
+                'nom' => 'Lyamani',
+                'prenom' => 'Ismail',
+                'mot_de_passe' => '$2y$12$Nkus8iU.vrccKrsB49iRNO8ZK/q0RU9OzfNWD9JtyzgWA.63huwSy', // password123
+                'role' => 'intervenant',
+                'telephone' => '0612345678',
+                'est_verifie' => true,
+                'note_moyenne' => 0.00,
+                'nb_avis' => 0,
+            ],
         ];
 
         foreach ($users as $userData) {

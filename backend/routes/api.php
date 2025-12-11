@@ -28,7 +28,7 @@ use App\Http\Controllers\API\Mission\ReviewController;
 use App\Http\Controllers\API\Admin\DashboardController;
 use App\Http\Controllers\API\Admin\DocumentValidationController;
 use App\Http\Controllers\API\Admin\UserManagementController;
-use App\Http\Controllers\API\Artisan\CategoryController; 
+use App\Http\Controllers\API\Artisan\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +62,10 @@ Route::get('/artisan/{id}', [SearchController::class, 'showProfile']);
 // Récupérer la liste des catégories (ex: pour remplir le select "Type de travaux")
 Route::get('/categories', [CategoryController::class, 'index']); // Ou une closure simple si pas de controller
 
+// --- TEMPORARY: Service creation without auth (for testing until login is implemented) ---
+// TODO: Move this back inside auth:sanctum middleware once authentication is working
+Route::post('/services', [ServiceController::class, 'store']);
+
 
 // ====================================================
 // SECTION 2 : ROUTES PROTÉGÉES (TOKEN REQUIS)
@@ -72,10 +76,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // --------------------------------------------------
     // A. GESTION DU COMPTE (Commun à tous)
     // --------------------------------------------------
-    
+
     // Déconnexion (Supprime le token actif)
     Route::post('/logout', [AuthController::class, 'logout']);
-    
+
     // "Qui suis-je ?" - React appelle ça au chargement pour savoir si l'user est connecté
     Route::get('/me', [AuthController::class, 'me']);
 
@@ -86,7 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 1. Gestion des Services
     Route::get('/my-services', [ServiceController::class, 'index']);        // Dashboard: Voir mes services
-    Route::post('/services', [ServiceController::class, 'store']);          // Créer un nouveau service
+    // Route::post('/services', [ServiceController::class, 'store']);       // MOVED TO PUBLIC ROUTES (temporarily)
     Route::put('/services/{id}', [ServiceController::class, 'update']);     // Modifier prix/description
     Route::patch('/services/{id}/toggle', [ServiceController::class, 'toggleStatus']); // Activer/Désactiver (Switch)
 
@@ -104,10 +108,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // --------------------------------------------------
     // C. ESPACE CLIENT (Demandes)
     // --------------------------------------------------
-    
+
     // Envoyer une demande de mission à un artisan
     Route::post('/demandes', [DemandeController::class, 'store']);
-    
+
     // Voir l'historique de mes demandes (Dashboard Client)
     Route::get('/demandes', [DemandeController::class, 'index']);
 

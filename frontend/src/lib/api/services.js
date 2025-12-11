@@ -94,3 +94,89 @@ export async function fetchArtisanProfile(id) {
         throw error;
     }
 }
+
+/**
+ * Fetch categories from the backend API
+ * @param {Object} params - Query parameters for filtering
+ * @param {string} params.type_service - Filter by service type (menuiserie, peinture, electricite)
+ * @param {string} params.type_categorie - Filter by category type (service, materiel)
+ * @returns {Promise<Array>} Array of categories
+ */
+export async function fetchCategories(params = {}) {
+    try {
+        const queryParams = new URLSearchParams();
+
+        if (params.type_service) {
+            queryParams.append('type_service', params.type_service);
+        }
+
+        if (params.type_categorie) {
+            queryParams.append('type_categorie', params.type_categorie);
+        }
+
+        const url = `${API_BASE_URL}/categories${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            return result.data;
+        } else {
+            throw new Error('Failed to fetch categories');
+        }
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+    }
+}
+
+/**
+ * Create a new service
+ * @param {Object} serviceData - Service data to create
+ * @returns {Promise<Object>} Created service data
+ */
+export async function createService(serviceData) {
+    try {
+        const url = `${API_BASE_URL}/services`;
+
+        console.log('Creating service:', serviceData);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(serviceData),
+        });
+
+        const result = await response.json();
+
+        console.log('Create service response:', result);
+
+        if (!response.ok) {
+            throw new Error(result.message || `HTTP error! status: ${response.status}`);
+        }
+
+        if (result.success) {
+            return result.data;
+        } else {
+            throw new Error(result.message || 'Failed to create service');
+        }
+    } catch (error) {
+        console.error('Error creating service:', error);
+        throw error;
+    }
+}
+

@@ -23,9 +23,67 @@ class ServiceController extends Controller
      */
     public function store(Request $request)
     {
-        // TODO: Vérifier que l'artisan n'a pas déjà 2 services (Limite).
-        // TODO: Valider les inputs (titre, ville, rayon_km, parametres_specifiques JSON).
-        // TODO: Créer le service en BDD et retourner le service créé.
+        // Validate incoming data
+        $validated = $request->validate([
+            'intervenant_id' => 'required|exists:users,id',
+            'type_service' => 'required|in:electricite,peinture,menuiserie',
+            'titre' => 'required|string|max:150',
+            'description' => 'nullable|string',
+            'ville' => 'nullable|string|max:100',
+            'adresse' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'rayon_km' => 'nullable|integer|min:1|max:200',
+            'parametres_specifiques' => 'nullable|array',
+            'categories' => 'required|array|min:1',
+            'categories.*.category_id' => 'required|exists:categories,id',
+            'categories.*.prix' => 'required|numeric|min:0',
+            'categories.*.unite_prix' => 'required|in:par_heure,par_m2,par_unite,par_service,forfait',
+        ]);
+
+        // Check if artisan already has 2 services (business rule limit)
+        $existingServicesCount = \App\Models\Service::where('intervenant_id', $validated['intervenant_id'])->count();
+        if ($existingServicesCount >= 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vous avez atteint la limite de 2 services par intervenant.',
+            ], 422);
+        }
+
+        // Create the service
+        $service = \App\Models\Service::create([
+            'intervenant_id' => $validated['intervenant_id'],
+            'type_service' => $validated['type_service'],
+            'titre' => $validated['titre'],
+            'description' => $validated['description'] ?? null,
+            'ville' => $validated['ville'] ?? null,
+            'adresse' => $validated['adresse'] ?? null,
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
+            'rayon_km' => $validated['rayon_km'] ?? 20,
+            'parametres_specifiques' => $validated['parametres_specifiques'] ?? null,
+            'est_actif' => true,
+            'statut' => 'actif',
+        ]);
+
+        // Create service_categories pivot entries
+        foreach ($validated['categories'] as $categoryData) {
+            \App\Models\ServiceCategorie::create([
+                'service_id' => $service->id,
+                'category_id' => $categoryData['category_id'],
+                'prix' => $categoryData['prix'],
+                'unite_prix' => $categoryData['unite_prix'],
+            ]);
+        }
+
+        // Load relationships for response
+        $service->load(['intervenant', 'serviceCategories.categorie']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Service créé avec succès',
+            'data' => $service,
+        ], 201);
     }
 
     /**

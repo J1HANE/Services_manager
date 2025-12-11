@@ -1,12 +1,13 @@
 // src/pages/ServiceWizardPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import Footer from '../components/Footer';
-import { 
-  Hammer, MapPin, Info, Euro, CheckCircle, ArrowRight, 
-  ArrowLeft, Paintbrush, Zap, Clock, Home 
+import {
+  Hammer, MapPin, Info, Euro, CheckCircle, ArrowRight,
+  ArrowLeft, Paintbrush, Zap, Clock, Home
 } from 'lucide-react';
+import { fetchCategories, createService } from '../lib/api/services';
 
 // Remplacez l'import de toast (sonner@2.0.3 n'existe pas en npm)
 // Utilisez un toast simple ou installez 'sonner'
@@ -26,6 +27,8 @@ function ServiceWizardPage() {
     description: '',
     ville: '',
     adresse: '',
+    latitude: '',
+    longitude: '',
   });
 
   // Étape 2: Catégorie et type de service
@@ -34,8 +37,6 @@ function ServiceWizardPage() {
     // Menuisier
     typeBois: '',
     finitions: [],
-    niveauComplexite: '',
-    delaiRealisation: '',
     // Peintre
     typesPeinture: [],
     surfaces: [],
@@ -45,11 +46,9 @@ function ServiceWizardPage() {
 
   // Étape 3: Catégories et tarifs
   const [categoriesPrices, setCategoriesPrices] = useState([]);
-
-  const villes = [
-    'Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 
-    'Nantes', 'Strasbourg', 'Montpellier', 'Bordeaux', 'Lille'
-  ];
+  const [backendCategories, setBackendCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = [
     { value: 'menuisier', label: 'Menuisier', icon: Hammer, color: 'amber' },
@@ -64,11 +63,6 @@ function ServiceWizardPage() {
   const surfacesPeinture = ['Intérieur résidentiel', 'Extérieur résidentiel', 'Locaux commerciaux', 'Bureaux', 'Façades', 'Plafonds', 'Boiseries', 'Métaux'];
   const typesTravauxElec = ['Installation neuve', 'Rénovation', 'Mise aux normes', 'Dépannage', 'Maintenance', 'Domotique', 'Éclairage', 'Chauffage électrique'];
 
-  const niveauxComplexite = [
-    { value: 'simple', label: 'Simple', description: 'Travaux standards' },
-    { value: 'moyen', label: 'Moyen', description: 'Nécessite une expertise' },
-    { value: 'complexe', label: 'Complexe', description: 'Travaux techniques avancés' },
-  ];
 
   // Initialiser les catégories de prix selon le métier
   const initCategoriesPrices = (cat) => {
@@ -112,9 +106,49 @@ function ServiceWizardPage() {
     }
   };
 
+  // Fetch categories from backend when service type changes
+  useEffect(() => {
+    if (categorie) {
+      const typeServiceMap = {
+        'menuisier': 'menuiserie',
+        'peintre': 'peinture',
+        'electricien': 'electricite'
+      };
+
+      const fetchBackendCategories = async () => {
+        setIsLoadingCategories(true);
+        try {
+          const categories = await fetchCategories({
+            type_service: typeServiceMap[categorie]
+          });
+          setBackendCategories(categories);
+
+          // Initialize categoriesPrices with backend categories
+          const initialPrices = categories.map(cat => ({
+            category_id: cat.id,
+            categorie: cat.nom,
+            type_categorie: cat.type_categorie,
+            prix: '50',
+            unite: 'MAD/heure',
+            selected: false
+          }));
+          setCategoriesPrices(initialPrices);
+        } catch (error) {
+          console.error('Error fetching categories:', error);
+          toast.error('Erreur lors du chargement des catégories');
+          // Fallback to hardcoded categories
+          setCategoriesPrices(initCategoriesPrices(categorie));
+        } finally {
+          setIsLoadingCategories(false);
+        }
+      };
+
+      fetchBackendCategories();
+    }
+  }, [categorie]);
+
   const handleCategorieChange = (cat) => {
     setCategorie(cat);
-    setCategoriesPrices(initCategoriesPrices(cat));
   };
 
   const handleFinitionToggle = (finition) => {
@@ -159,20 +193,17 @@ function ServiceWizardPage() {
         return false;
       }
       if (categorie === 'menuisier') {
-        if (!specificFields.typeBois || specificFields.finitions.length === 0 || 
-            !specificFields.niveauComplexite || !specificFields.delaiRealisation) {
+        if (!specificFields.typeBois || specificFields.finitions.length === 0) {
           toast.error('Veuillez remplir tous les champs spécifiques au menuisier');
           return false;
         }
       } else if (categorie === 'peintre') {
-        if (specificFields.typesPeinture.length === 0 || specificFields.surfaces.length === 0 || 
-            !specificFields.niveauComplexite || !specificFields.delaiRealisation) {
+        if (specificFields.typesPeinture.length === 0 || specificFields.surfaces.length === 0) {
           toast.error('Veuillez remplir tous les champs spécifiques au peintre');
           return false;
         }
       } else if (categorie === 'electricien') {
-        if (specificFields.typesTravaux.length === 0 || !specificFields.niveauComplexite || 
-            !specificFields.delaiRealisation) {
+        if (specificFields.typesTravaux.length === 0) {
           toast.error('Veuillez remplir tous les champs spécifiques à l\'électricien');
           return false;
         }
@@ -197,17 +228,69 @@ function ServiceWizardPage() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = () => {
-    if (validateStep(3)) {
+  const handleSubmit = async () => {
+    if (!validateStep(3)) return;
+
+    setIsSubmitting(true);
+
+    try {
       const selectedCategories = categoriesPrices.filter(c => c.selected);
-      console.log('Service publié:', {
-        ...formData,
-        categorie,
-        specificFields,
-        categories: selectedCategories,
-      });
+
+      // Map frontend category to database enum
+      const typeServiceMap = {
+        'menuisier': 'menuiserie',
+        'peintre': 'peinture',
+        'electricien': 'electricite'
+      };
+
+      // Map price units to database enum
+      const uniteMap = {
+        'MAD/heure': 'par_heure',
+        'MAD/m²': 'par_m2',
+        'MAD/unité': 'par_unite',
+        'MAD/jour': 'forfait',
+        'MAD/point': 'par_unite',
+        'MAD/radiateur': 'par_unite',
+        'MAD/système': 'forfait',
+        'MAD/projet': 'forfait',
+        'MAD/service': 'par_service'
+      };
+
+      // Prepare service data for API
+      const serviceData = {
+        intervenant_id: 4, // Ismail Lyamani (Kenitra) - Test user with no services
+        type_service: typeServiceMap[categorie],
+        titre: formData.titre,
+        description: formData.description,
+        ville: formData.ville,
+        adresse: formData.adresse,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        rayon_km: 20,
+        parametres_specifiques: specificFields,
+        categories: selectedCategories.map(cat => ({
+          category_id: cat.category_id,
+          prix: parseFloat(cat.prix),
+          unite_prix: uniteMap[cat.unite] || 'par_heure'
+        }))
+      };
+
+      console.log('Submitting service data:', serviceData);
+
+      const createdService = await createService(serviceData);
+
+      console.log('Service created:', createdService);
       toast.success('Service publié avec succès !');
-      navigate('/'); // Redirection vers l'accueil
+
+      // Redirect to home page after short delay
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    } catch (error) {
+      console.error('Error creating service:', error);
+      toast.error(error.message || 'Erreur lors de la création du service');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -277,7 +360,7 @@ function ServiceWizardPage() {
                 </div>
                 <span className="text-sm text-amber-700">{Math.round(progress)}% complété</span>
               </div>
-              
+
               {/* Barre de progression visuelle */}
               <div className="relative">
                 <div className="w-full h-3 bg-amber-200 rounded-full overflow-hidden">
@@ -286,17 +369,16 @@ function ServiceWizardPage() {
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                
+
                 {/* Points d'étapes */}
                 <div className="absolute top-0 left-0 w-full flex justify-between px-1 -mt-1">
                   {[1, 2, 3].map((step) => (
                     <div
                       key={step}
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                        currentStep >= step
-                          ? `${colors.bg} ${colors.border} text-white`
-                          : 'bg-white border-amber-300 text-amber-600'
-                      }`}
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${currentStep >= step
+                        ? `${colors.bg} ${colors.border} text-white`
+                        : 'bg-white border-amber-300 text-amber-600'
+                        }`}
                     >
                       <span className="text-xs font-semibold">{step}</span>
                     </div>
@@ -359,19 +441,13 @@ function ServiceWizardPage() {
                       <label className="block text-amber-900 mb-2 font-semibold">
                         Ville <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative">
-                        <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5 pointer-events-none" />
-                        <select
-                          value={formData.ville}
-                          onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
-                          className="w-full pl-12 pr-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors appearance-none bg-white cursor-pointer"
-                        >
-                          <option value="">Sélectionnez une ville</option>
-                          {villes.map(ville => (
-                            <option key={ville} value={ville}>{ville}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <input
+                        type="text"
+                        value={formData.ville}
+                        onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                        placeholder="Ex: Kenitra"
+                        className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
+                      />
                     </div>
 
                     <div>
@@ -383,6 +459,36 @@ function ServiceWizardPage() {
                         value={formData.adresse}
                         onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
                         placeholder="123 Rue de la République"
+                        className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-amber-900 mb-2 font-semibold">
+                        Latitude
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.latitude}
+                        onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                        placeholder="Ex: 34.2610"
+                        className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-amber-900 mb-2 font-semibold">
+                        Longitude
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.longitude}
+                        onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                        placeholder="Ex: -6.5802"
                         className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
                       />
                     </div>
@@ -411,15 +517,13 @@ function ServiceWizardPage() {
                             key={cat.value}
                             type="button"
                             onClick={() => handleCategorieChange(cat.value)}
-                            className={`p-6 rounded-xl border-2 transition-all ${
-                              categorie === cat.value
-                                ? `border-${cat.color}-600 bg-${cat.color}-50 shadow-lg`
-                                : `border-amber-200 hover:border-${cat.color}-400`
-                            }`}
+                            className={`p-6 rounded-xl border-2 transition-all ${categorie === cat.value
+                              ? `border-${cat.color}-600 bg-${cat.color}-50 shadow-lg`
+                              : `border-amber-200 hover:border-${cat.color}-400`
+                              }`}
                           >
-                            <Icon className={`w-10 h-10 mx-auto mb-3 ${
-                              categorie === cat.value ? `text-${cat.color}-700` : 'text-amber-600'
-                            }`} />
+                            <Icon className={`w-10 h-10 mx-auto mb-3 ${categorie === cat.value ? `text-${cat.color}-700` : 'text-amber-600'
+                              }`} />
                             <div className="font-semibold text-amber-900">{cat.label}</div>
                           </button>
                         );
@@ -431,7 +535,7 @@ function ServiceWizardPage() {
                   {categorie === 'menuisier' && (
                     <div className="space-y-6 pt-6 border-t border-amber-200">
                       <h3 className="text-xl text-amber-900 font-semibold">Paramètres spécifiques - Menuisier</h3>
-                      
+
                       <div>
                         <label className="block text-amber-900 mb-2 font-semibold">
                           Type de bois principal <span className="text-red-500">*</span>
@@ -458,54 +562,14 @@ function ServiceWizardPage() {
                               key={finition}
                               type="button"
                               onClick={() => handleFinitionToggle(finition)}
-                              className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                                specificFields.finitions.includes(finition)
-                                  ? 'border-amber-600 bg-amber-50 text-amber-900'
-                                  : 'border-amber-200 hover:border-amber-400 text-amber-700'
-                              }`}
+                              className={`px-4 py-2 rounded-lg border-2 transition-all ${specificFields.finitions.includes(finition)
+                                ? 'border-amber-600 bg-amber-50 text-amber-900'
+                                : 'border-amber-200 hover:border-amber-400 text-amber-700'
+                                }`}
                             >
                               {finition}
                             </button>
                           ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-amber-900 mb-2 font-semibold">
-                          Niveau de complexité <span className="text-red-500">*</span>
-                        </label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {niveauxComplexite.map((niveau) => (
-                            <button
-                              key={niveau.value}
-                              type="button"
-                              onClick={() => setSpecificFields({ ...specificFields, niveauComplexite: niveau.value })}
-                              className={`p-4 rounded-lg border-2 transition-all text-left ${
-                                specificFields.niveauComplexite === niveau.value
-                                  ? 'border-amber-600 bg-amber-50'
-                                  : 'border-amber-200 hover:border-amber-400'
-                              }`}
-                            >
-                              <div className="font-semibold text-amber-900 mb-1">{niveau.label}</div>
-                              <div className="text-sm text-amber-700">{niveau.description}</div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-amber-900 mb-2 font-semibold">
-                          Délai de réalisation estimé <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5" />
-                          <input
-                            type="text"
-                            value={specificFields.delaiRealisation}
-                            onChange={(e) => setSpecificFields({ ...specificFields, delaiRealisation: e.target.value })}
-                            placeholder="Ex: 2-4 semaines"
-                            className="w-full pl-12 pr-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
-                          />
                         </div>
                       </div>
                     </div>
@@ -514,7 +578,7 @@ function ServiceWizardPage() {
                   {categorie === 'peintre' && (
                     <div className="space-y-6 pt-6 border-t border-amber-200">
                       <h3 className="text-xl text-amber-900 font-semibold">Paramètres spécifiques - Peintre</h3>
-                      
+
                       <div>
                         <label className="block text-amber-900 mb-2 font-semibold">
                           Types de peinture maîtrisés <span className="text-red-500">*</span>
@@ -525,11 +589,10 @@ function ServiceWizardPage() {
                               key={type}
                               type="button"
                               onClick={() => handleTypeToggle(type, 'typesPeinture')}
-                              className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                                specificFields.typesPeinture.includes(type)
-                                  ? 'border-orange-600 bg-orange-50 text-amber-900'
-                                  : 'border-orange-200 hover:border-orange-400 text-amber-700'
-                              }`}
+                              className={`px-4 py-2 rounded-lg border-2 transition-all ${specificFields.typesPeinture.includes(type)
+                                ? 'border-orange-600 bg-orange-50 text-amber-900'
+                                : 'border-orange-200 hover:border-orange-400 text-amber-700'
+                                }`}
                             >
                               {type}
                             </button>
@@ -547,54 +610,14 @@ function ServiceWizardPage() {
                               key={surface}
                               type="button"
                               onClick={() => handleTypeToggle(surface, 'surfaces')}
-                              className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                                specificFields.surfaces.includes(surface)
-                                  ? 'border-orange-600 bg-orange-50 text-amber-900'
-                                  : 'border-orange-200 hover:border-orange-400 text-amber-700'
-                              }`}
+                              className={`px-4 py-3 rounded-lg border-2 transition-all ${specificFields.surfaces.includes(surface)
+                                ? 'border-orange-600 bg-orange-50 text-amber-900'
+                                : 'border-orange-200 hover:border-orange-400 text-amber-700'
+                                }`}
                             >
                               {surface}
                             </button>
                           ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-amber-900 mb-2 font-semibold">
-                          Niveau de complexité <span className="text-red-500">*</span>
-                        </label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {niveauxComplexite.map((niveau) => (
-                            <button
-                              key={niveau.value}
-                              type="button"
-                              onClick={() => setSpecificFields({ ...specificFields, niveauComplexite: niveau.value })}
-                              className={`p-4 rounded-lg border-2 transition-all text-left ${
-                                specificFields.niveauComplexite === niveau.value
-                                  ? 'border-orange-600 bg-orange-50'
-                                  : 'border-orange-200 hover:border-orange-400'
-                              }`}
-                            >
-                              <div className="font-semibold text-amber-900 mb-1">{niveau.label}</div>
-                              <div className="text-sm text-amber-700">{niveau.description}</div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-amber-900 mb-2 font-semibold">
-                          Délai de réalisation estimé <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-orange-600 w-5 h-5" />
-                          <input
-                            type="text"
-                            value={specificFields.delaiRealisation}
-                            onChange={(e) => setSpecificFields({ ...specificFields, delaiRealisation: e.target.value })}
-                            placeholder="Ex: 3-5 jours pour une pièce"
-                            className="w-full pl-12 pr-4 py-3 border-2 border-orange-200 rounded-lg focus:outline-none focus:border-orange-600 transition-colors"
-                          />
                         </div>
                       </div>
                     </div>
@@ -603,7 +626,7 @@ function ServiceWizardPage() {
                   {categorie === 'electricien' && (
                     <div className="space-y-6 pt-6 border-t border-amber-200">
                       <h3 className="text-xl text-amber-900 font-semibold">Paramètres spécifiques - Électricien</h3>
-                      
+
                       <div>
                         <label className="block text-amber-900 mb-2 font-semibold">
                           Types de travaux proposés <span className="text-red-500">*</span>
@@ -614,54 +637,14 @@ function ServiceWizardPage() {
                               key={type}
                               type="button"
                               onClick={() => handleTypeToggle(type, 'typesTravaux')}
-                              className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                                specificFields.typesTravaux.includes(type)
-                                  ? 'border-green-600 bg-green-50 text-amber-900'
-                                  : 'border-green-200 hover:border-green-400 text-amber-700'
-                              }`}
+                              className={`px-4 py-3 rounded-lg border-2 transition-all ${specificFields.typesTravaux.includes(type)
+                                ? 'border-green-600 bg-green-50 text-amber-900'
+                                : 'border-green-200 hover:border-green-400 text-amber-700'
+                                }`}
                             >
                               {type}
                             </button>
                           ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-amber-900 mb-2 font-semibold">
-                          Niveau de complexité <span className="text-red-500">*</span>
-                        </label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {niveauxComplexite.map((niveau) => (
-                            <button
-                              key={niveau.value}
-                              type="button"
-                              onClick={() => setSpecificFields({ ...specificFields, niveauComplexite: niveau.value })}
-                              className={`p-4 rounded-lg border-2 transition-all text-left ${
-                                specificFields.niveauComplexite === niveau.value
-                                  ? 'border-green-600 bg-green-50'
-                                  : 'border-green-200 hover:border-green-400'
-                              }`}
-                            >
-                              <div className="font-semibold text-amber-900 mb-1">{niveau.label}</div>
-                              <div className="text-sm text-amber-700">{niveau.description}</div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-amber-900 mb-2 font-semibold">
-                          Délai de réalisation estimé <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-green-600 w-5 h-5" />
-                          <input
-                            type="text"
-                            value={specificFields.delaiRealisation}
-                            onChange={(e) => setSpecificFields({ ...specificFields, delaiRealisation: e.target.value })}
-                            placeholder="Ex: 1-2 jours pour installation standard"
-                            className="w-full pl-12 pr-4 py-3 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-600 transition-colors"
-                          />
                         </div>
                       </div>
 
@@ -696,70 +679,92 @@ function ServiceWizardPage() {
                     )}
                   </div>
 
-                  <div className="space-y-3">
-                    {categoriesPrices.map((item, index) => (
-                      <div
-                        key={item.categorie}
-                        className={`border-2 rounded-lg p-4 transition-all ${
-                          item.selected
-                            ? `${colors.border} ${colors.bgLight}`
-                            : `${colors.borderLight} ${colors.hover}`
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <input
-                            type="checkbox"
-                            checked={item.selected}
-                            onChange={() => handleCategorieToggle(index)}
-                            className="mt-1 w-5 h-5 rounded border-amber-300 focus:ring-amber-500"
-                          />
-                          
-                          <div className="flex-1">
-                            <label className="font-semibold text-amber-900 cursor-pointer block mb-2">
-                              {item.categorie}
-                            </label>
-                            
-                            {item.selected ? (
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 max-w-xs">
-                                  <label className="block text-xs text-amber-700 mb-1">Prix</label>
-                                  <input
-                                    type="number"
-                                    value={item.prix}
-                                    onChange={(e) => handlePriceChange(index, 'prix', e.target.value)}
-                                    className={`w-full px-3 py-2 border-2 ${colors.borderLight} rounded-lg focus:outline-none ${colors.focus}`}
-                                    min="0"
-                                    step="0.01"
-                                  />
-                                </div>
-                                <div className="flex-1 max-w-xs">
-                                  <label className="block text-xs text-amber-700 mb-1">Unité</label>
-                                  <select
-                                    value={item.unite}
-                                    onChange={(e) => handlePriceChange(index, 'unite', e.target.value)}
-                                    className={`w-full px-3 py-2 border-2 ${colors.borderLight} rounded-lg focus:outline-none ${colors.focus}`}
-                                  >
-                                    <option value="€/heure">€/heure</option>
-                                    <option value="€/jour">€/jour</option>
-                                    <option value="€/m²">€/m²</option>
-                                    <option value="€/unité">€/unité</option>
-                                    <option value="€/point">€/point</option>
-                                    <option value="€/radiateur">€/radiateur</option>
-                                    <option value="€/système">€/système</option>
-                                    <option value="€/projet">€/projet</option>
-                                  </select>
+                  {/* Group categories by type_categorie */}
+                  {['service', 'materiel', 'autre'].map(typeCategorie => {
+                    const categoriesOfType = categoriesPrices.filter(cat => cat.type_categorie === typeCategorie);
+                    if (categoriesOfType.length === 0) return null;
+
+                    const typeCategorieLabels = {
+                      'service': 'Services',
+                      'materiel': 'Matériel',
+                      'autre': 'Autres'
+                    };
+
+                    return (
+                      <div key={typeCategorie} className="space-y-3">
+                        <h3 className="text-lg font-semibold text-amber-900 mt-6 mb-3 flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${colors.bg}`}></div>
+                          {typeCategorieLabels[typeCategorie]}
+                        </h3>
+
+                        {categoriesOfType.map((item, globalIndex) => {
+                          const index = categoriesPrices.indexOf(item);
+                          return (
+                            <div
+                              key={item.category_id}
+                              className={`border-2 rounded-lg p-4 transition-all ${item.selected
+                                ? `${colors.border} ${colors.bgLight}`
+                                : `${colors.borderLight} ${colors.hover}`
+                                }`}
+                            >
+                              <div className="flex items-start gap-4">
+                                <input
+                                  type="checkbox"
+                                  checked={item.selected}
+                                  onChange={() => handleCategorieToggle(index)}
+                                  className="mt-1 w-5 h-5 rounded border-amber-300 focus:ring-amber-500"
+                                />
+
+                                <div className="flex-1">
+                                  <label className="font-semibold text-amber-900 cursor-pointer block mb-2">
+                                    {item.categorie}
+                                  </label>
+
+                                  {item.selected ? (
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-1 max-w-xs">
+                                        <label className="block text-xs text-amber-700 mb-1">Prix (MAD)</label>
+                                        <input
+                                          type="number"
+                                          value={item.prix}
+                                          onChange={(e) => handlePriceChange(index, 'prix', e.target.value)}
+                                          className={`w-full px-3 py-2 border-2 ${colors.borderLight} rounded-lg focus:outline-none ${colors.focus}`}
+                                          min="0"
+                                          step="0.01"
+                                        />
+                                      </div>
+                                      <div className="flex-1 max-w-xs">
+                                        <label className="block text-xs text-amber-700 mb-1">Unité</label>
+                                        <select
+                                          value={item.unite}
+                                          onChange={(e) => handlePriceChange(index, 'unite', e.target.value)}
+                                          className={`w-full px-3 py-2 border-2 ${colors.borderLight} rounded-lg focus:outline-none ${colors.focus}`}
+                                        >
+                                          <option value="MAD/heure">MAD/heure</option>
+                                          <option value="MAD/jour">MAD/jour</option>
+                                          <option value="MAD/m²">MAD/m²</option>
+                                          <option value="MAD/unité">MAD/unité</option>
+                                          <option value="MAD/point">MAD/point</option>
+                                          <option value="MAD/radiateur">MAD/radiateur</option>
+                                          <option value="MAD/système">MAD/système</option>
+                                          <option value="MAD/projet">MAD/projet</option>
+                                          <option value="MAD/service">MAD/service</option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-sm text-amber-600">
+                                      Prix par défaut: <span className="font-semibold">{item.prix} {item.unite}</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                            ) : (
-                              <div className="text-sm text-amber-600">
-                                Prix par défaut: <span className="font-semibold">{item.prix} {item.unite}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -775,7 +780,7 @@ function ServiceWizardPage() {
                     Précédent
                   </button>
                 )}
-                
+
                 {currentStep < totalSteps ? (
                   <button
                     type="button"
@@ -789,10 +794,11 @@ function ServiceWizardPage() {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    className={`flex-1 px-6 py-4 ${colors.bg} text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2`}
+                    disabled={isSubmitting}
+                    className={`flex-1 px-6 py-4 ${colors.bg} text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <CheckCircle className="w-5 h-5" />
-                    Publier le Service
+                    {isSubmitting ? 'Publication en cours...' : 'Publier le Service'}
                   </button>
                 )}
               </div>

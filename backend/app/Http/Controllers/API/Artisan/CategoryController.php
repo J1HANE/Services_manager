@@ -14,8 +14,23 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        // TODO: Si un paramètre '?type_service=peinture' est présent, filtrer.
-        // TODO: Sinon, retourner toutes les catégories groupées par type.
-        // TODO: Retourner le JSON (id, nom, description, type_categorie).
+        $query = \App\Models\Categorie::query();
+
+        // Filter by type_service if provided (e.g., ?type_service=peinture)
+        if ($request->has('type_service')) {
+            $query->where('type_service', $request->type_service);
+        }
+
+        // Filter by type_categorie if provided (e.g., ?type_categorie=service)
+        if ($request->has('type_categorie')) {
+            $query->where('type_categorie', $request->type_categorie);
+        }
+
+        $categories = $query->orderBy('type_service')->orderBy('nom')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $categories,
+        ]);
     }
 }
