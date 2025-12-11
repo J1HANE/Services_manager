@@ -152,11 +152,15 @@ export async function createService(serviceData) {
 
         console.log('Creating service:', serviceData);
 
+        // Get auth token from localStorage
+        const token = localStorage.getItem('auth_token');
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` }),
             },
             body: JSON.stringify(serviceData),
         });

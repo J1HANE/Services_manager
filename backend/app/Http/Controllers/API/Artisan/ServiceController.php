@@ -23,9 +23,11 @@ class ServiceController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate incoming data
+        // Get authenticated user ID
+        $intervenantId = $request->user()->id;
+
+        // Validate incoming data (intervenant_id no longer needed in request)
         $validated = $request->validate([
-            'intervenant_id' => 'required|exists:users,id',
             'type_service' => 'required|in:electricite,peinture,menuiserie',
             'titre' => 'required|string|max:150',
             'description' => 'nullable|string',
@@ -42,7 +44,7 @@ class ServiceController extends Controller
         ]);
 
         // Check if artisan already has 2 services (business rule limit)
-        $existingServicesCount = \App\Models\Service::where('intervenant_id', $validated['intervenant_id'])->count();
+        $existingServicesCount = \App\Models\Service::where('intervenant_id', $intervenantId)->count();
         if ($existingServicesCount >= 2) {
             return response()->json([
                 'success' => false,
@@ -52,7 +54,7 @@ class ServiceController extends Controller
 
         // Create the service
         $service = \App\Models\Service::create([
-            'intervenant_id' => $validated['intervenant_id'],
+            'intervenant_id' => $intervenantId,
             'type_service' => $validated['type_service'],
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,

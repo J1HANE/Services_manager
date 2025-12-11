@@ -62,10 +62,6 @@ Route::get('/artisan/{id}', [SearchController::class, 'showProfile']);
 // Récupérer la liste des catégories (ex: pour remplir le select "Type de travaux")
 Route::get('/categories', [CategoryController::class, 'index']); // Ou une closure simple si pas de controller
 
-// --- TEMPORARY: Service creation without auth (for testing until login is implemented) ---
-// TODO: Move this back inside auth:sanctum middleware once authentication is working
-Route::post('/services', [ServiceController::class, 'store']);
-
 
 // ====================================================
 // SECTION 2 : ROUTES PROTÉGÉES (TOKEN REQUIS)
@@ -90,7 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 1. Gestion des Services
     Route::get('/my-services', [ServiceController::class, 'index']);        // Dashboard: Voir mes services
-    // Route::post('/services', [ServiceController::class, 'store']);       // MOVED TO PUBLIC ROUTES (temporarily)
+    Route::post('/services', [ServiceController::class, 'store']);          // Créer un nouveau service
     Route::put('/services/{id}', [ServiceController::class, 'update']);     // Modifier prix/description
     Route::patch('/services/{id}/toggle', [ServiceController::class, 'toggleStatus']); // Activer/Désactiver (Switch)
 

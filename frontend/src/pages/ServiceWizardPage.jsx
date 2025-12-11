@@ -21,6 +21,15 @@ function ServiceWizardPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
 
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast.error('Vous devez être connecté pour créer un service');
+      navigate('/login');
+    }
+  }, [navigate]);
+
   // Étape 1: Informations de base
   const [formData, setFormData] = useState({
     titre: '',
@@ -256,9 +265,8 @@ function ServiceWizardPage() {
         'MAD/service': 'par_service'
       };
 
-      // Prepare service data for API
+      // Prepare service data for API (intervenant_id will be taken from authenticated user)
       const serviceData = {
-        intervenant_id: 4, // Ismail Lyamani (Kenitra) - Test user with no services
         type_service: typeServiceMap[categorie],
         titre: formData.titre,
         description: formData.description,
