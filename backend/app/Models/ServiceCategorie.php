@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class ServiceCategory extends Pivot
+class ServiceCategorie extends Pivot
 {
     protected $table = 'service_categories';
 
