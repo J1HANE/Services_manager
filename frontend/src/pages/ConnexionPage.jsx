@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Header } from '../components/Header'; // Note: si c'est un export nommé
 import Footer from '../components/Footer';
 import { Mail, Lock, Eye, EyeOff, Hammer } from 'lucide-react';
-import axios from '../api/axios'; 
+import axios from '../api/axios';
 import { Link, useNavigate } from 'react-router-dom';
 
 
@@ -20,13 +20,14 @@ function ConnexionPage() {
         email,
         password,
       });
-      
+
       console.log('Connexion réussie', response.data);
 
-      // exemple : stocker le token ou user dans localStorage
+      // Store both user and token in localStorage
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('auth_token', response.data.token);
 
-      // rediriger vers la page d'accueil ou dashboard
+      // Redirect to home page or dashboard
       navigate('/');
     } catch (error) {
       console.error('Erreur de connexion', error.response?.data || error.message);
@@ -35,9 +36,9 @@ function ConnexionPage() {
   };
 
   // Redirige vers ton backend pour Google OAuth
-const handleGoogleLogin = () => {
-  window.open('http://127.0.0.1:8000/api/auth/google/redirect', '_self');
-};
+  const handleGoogleLogin = () => {
+    window.open('http://127.0.0.1:8000/api/auth/google/redirect', '_self');
+  };
 
 
   return (
