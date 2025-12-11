@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
@@ -8,11 +9,11 @@ import { LeafletWrapper } from '../components/LeafletWrapper';
 
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 
-import { 
-  Search, MapPin, Star, Hammer, Paintbrush, Zap, 
-  ChevronDown, ChevronUp, Navigation 
+import {
+  Search, MapPin, Star, Hammer, Paintbrush, Zap,
+  ChevronDown, ChevronUp, Navigation, AlertCircle
 } from 'lucide-react';
-import { intervenants } from '../lib/intervenants-data';
+import { fetchServices } from '../lib/api/services';
 
 // Composant pour centrer la carte
 function MapController({ center }) {
@@ -32,29 +33,59 @@ function RechercheIntervenantsPage({ serviceType = null }) {
   const [expandedCards, setExpandedCards] = useState(new Set());
   const [mapReady, setMapReady] = useState(false);
 
+  // New state for API data
+  const [intervenants, setIntervenants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch services from API on component mount or when serviceType changes
+  useEffect(() => {
+    const loadServices = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = {};
+        if (serviceType) {
+          params.type_service = serviceType;
+        }
+
+        const data = await fetchServices(params);
+        setIntervenants(data);
+      } catch (err) {
+        console.error('Failed to load services:', err);
+        setError('Impossible de charger les services. Veuillez réessayer plus tard.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadServices();
+  }, [serviceType]);
+
   // Obtenir toutes les villes uniques
   const villes = useMemo(() => {
     const allVilles = intervenants
       .filter(i => !serviceType || i.service === serviceType)
       .map(i => i.ville);
     return Array.from(new Set(allVilles)).sort();
-  }, [serviceType]);
+  }, [intervenants, serviceType]);
 
   // Filtrer les intervenants
   const filteredIntervenants = useMemo(() => {
     return intervenants.filter(intervenant => {
       const matchService = !serviceType || intervenant.service === serviceType;
-      const matchSearch = !searchTerm || 
+      const matchSearch = !searchTerm ||
         intervenant.surnom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         intervenant.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchVille = !selectedVille || intervenant.ville === selectedVille;
-      
+
       return matchService && matchSearch && matchVille;
     });
-  }, [serviceType, searchTerm, selectedVille]);
+  }, [intervenants, serviceType, searchTerm, selectedVille]);
 
   // Centre de la carte
-  const mapCenter = selectedIntervenant 
+  const mapCenter = selectedIntervenant
     ? [selectedIntervenant.lat, selectedIntervenant.lng]
     : [46.603354, 1.888334]; // Centre de la France
 
@@ -110,11 +141,11 @@ function RechercheIntervenantsPage({ serviceType = null }) {
   // Créer des icônes personnalisées
   const createCustomIcon = (service, isSelected = false) => {
     if (typeof window === 'undefined') return null;
-    
+
     return import('leaflet').then((L) => {
       const colors = {
         menuiserie: '#D97706',
-        peinture: '#B45309', 
+        peinture: '#B45309',
         electricite: '#15803d',
       };
 
@@ -165,13 +196,13 @@ function RechercheIntervenantsPage({ serviceType = null }) {
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex-grow bg-gradient-to-br from-amber-50 via-orange-50 to-green-50" style={{ fontFamily: 'Times New Roman, serif' }}>
-        
+
         {/* Page Title */}
         <div className="bg-gradient-to-r from-amber-900 via-orange-800 to-green-900 text-white py-12 px-4 pt-32">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-4xl mb-2">{getTitle()}</h1>
             <p className="text-amber-100">
-              {serviceType 
+              {serviceType
                 ? `Découvrez nos professionnels en ${getServiceLabel(serviceType)}`
                 : 'Découvrez tous nos professionnels qualifiés'
               }
@@ -224,7 +255,33 @@ function RechercheIntervenantsPage({ serviceType = null }) {
           {/* Liste des intervenants (50%) */}
           <div className="w-full lg:w-1/2 overflow-y-auto p-6 bg-gradient-to-br from-amber-50/50 to-orange-50/50">
             <div className="max-w-2xl mx-auto space-y-4">
-              {filteredIntervenants.length === 0 ? (
+              {/* Loading State */}
+              {loading && (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-amber-600 mb-4"></div>
+                  <p className="text-xl text-amber-900">Chargement des services...</p>
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && !loading && (
+                <div className="text-center py-12">
+                  <div className="text-red-600 mb-4">
+                    <AlertCircle className="w-16 h-16 mx-auto" />
+                  </div>
+                  <p className="text-xl text-red-900 mb-2">Erreur</p>
+                  <p className="text-red-700">{error}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )}
+
+              {/* No Results */}
+              {!loading && !error && filteredIntervenants.length === 0 && (
                 <div className="text-center py-12">
                   <div className="text-amber-600 mb-4">
                     <Search className="w-16 h-16 mx-auto opacity-50" />
@@ -232,11 +289,14 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                   <p className="text-xl text-amber-900">Aucun intervenant trouvé</p>
                   <p className="text-amber-700 mt-2">Essayez de modifier vos critères de recherche</p>
                 </div>
-              ) : (
+              )}
+
+              {/* Intervenants List */}
+              {!loading && !error && filteredIntervenants.length > 0 && (
                 filteredIntervenants.map((intervenant) => {
                   const isExpanded = expandedCards.has(intervenant.id);
                   const isSelected = selectedIntervenant?.id === intervenant.id;
-                  const shortDescription = intervenant.description.length > 150 
+                  const shortDescription = intervenant.description.length > 150
                     ? intervenant.description.substring(0, 150) + '...'
                     : intervenant.description;
 
@@ -244,9 +304,8 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                     <div
                       key={intervenant.id}
                       onClick={() => setSelectedIntervenant(intervenant)}
-                      className={`bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all cursor-pointer border-2 ${
-                        isSelected ? 'border-orange-500 ring-4 ring-orange-200' : 'border-transparent'
-                      }`}
+                      className={`bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all cursor-pointer border-2 ${isSelected ? 'border-orange-500 ring-4 ring-orange-200' : 'border-transparent'
+                        }`}
                     >
                       <div className="p-5">
                         {/* En-tête avec image et infos principales */}
@@ -260,7 +319,7 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="text-xl text-amber-900 mb-1">{intervenant.surnom}</h3>
-                                <div 
+                                <div
                                   className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm"
                                   style={{ backgroundColor: getServiceColor(intervenant.service) }}
                                 >
@@ -279,7 +338,7 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                                 <Navigation className="w-5 h-5" />
                               </button>
                             </div>
-                            
+
                             <div className="flex items-center gap-1 mb-2">
                               <MapPin className="w-4 h-4 text-orange-600" />
                               <span className="text-amber-800">{intervenant.ville}</span>
@@ -355,7 +414,7 @@ function RechercheIntervenantsPage({ serviceType = null }) {
 
           {/* Carte géographique (50%) */}
           <div className="w-full lg:w-1/2 h-full">
-            <LeafletWrapper 
+            <LeafletWrapper
               className="h-full w-full relative"
               style={{ minHeight: '500px' }}
             >
@@ -368,7 +427,7 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
-                
+
                 <MapController center={mapCenter} />
 
                 {filteredIntervenants.map((intervenant) => (
@@ -393,7 +452,7 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                           <MapPin className="w-3 h-3" />
                           <span>{intervenant.ville}</span>
                         </div>
-                        <div 
+                        <div
                           className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-white text-xs mb-2 mx-auto"
                           style={{ backgroundColor: getServiceColor(intervenant.service) }}
                         >
