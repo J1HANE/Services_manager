@@ -1,40 +1,58 @@
 // src/pages/ConnexionPage.jsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Header } from '../components/Header'; // Note: si c'est un export nommé
 import Footer from '../components/Footer';
 import { Mail, Lock, Eye, EyeOff, Hammer } from 'lucide-react';
+import axios from '../api/axios'; 
+import { Link, useNavigate } from 'react-router-dom';
+
 
 function ConnexionPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate(); // pour rediriger après connexion
 
-  // CORRECTION ICI : Supprimez l'annotation TypeScript
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logique de connexion ici
-    console.log('Connexion avec:', email, password);
+    try {
+      const response = await axios.post('/login', {
+        email,
+        password,
+      });
+      
+      console.log('Connexion réussie', response.data);
+
+      // exemple : stocker le token ou user dans localStorage
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+
+      // rediriger vers la page d'accueil ou dashboard
+      navigate('/');
+    } catch (error) {
+      console.error('Erreur de connexion', error.response?.data || error.message);
+      alert(error.response?.data?.message || 'Erreur de connexion');
+    }
   };
 
-  const handleGoogleLogin = () => {
-    // Logique de connexion Google ici
-    console.log('Connexion avec Google');
-  };
+  // Redirige vers ton backend pour Google OAuth
+const handleGoogleLogin = () => {
+  window.open('http://127.0.0.1:8000/api/auth/google/redirect', '_self');
+};
+
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <Header />
       <div className="flex-grow bg-gradient-to-br from-amber-900 via-orange-900 to-green-900" style={{ fontFamily: 'Times New Roman, serif' }}>
-        <div className="pt-32 pb-12 px-4">
+        <div className="px-4 pt-32 pb-12">
           <div className="max-w-md mx-auto">
             {/* Card */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-gradient-to-br from-amber-700 via-orange-800 to-green-900 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="p-8 shadow-2xl bg-white/95 backdrop-blur-sm rounded-2xl">
+              <div className="mb-8 text-center">
+                <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 shadow-lg bg-gradient-to-br from-amber-700 via-orange-800 to-green-900 rounded-2xl">
                   <Hammer className="w-10 h-10 text-white" />
                 </div>
-                <h1 className="text-4xl text-amber-900 mb-2">Connexion</h1>
+                <h1 className="mb-2 text-4xl text-amber-900">Connexion</h1>
                 <p className="text-amber-700">Bienvenue sur ServicePro</p>
               </div>
 
@@ -42,15 +60,15 @@ function ConnexionPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email */}
                 <div>
-                  <label className="block text-amber-900 mb-2 font-semibold">Email</label>
+                  <label className="block mb-2 font-semibold text-amber-900">Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5" />
+                    <Mail className="absolute w-5 h-5 transform -translate-y-1/2 left-4 top-1/2 text-amber-600" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="votre@email.com"
-                      className="w-full pl-12 pr-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-700 transition-colors bg-white"
+                      className="w-full py-3 pl-12 pr-4 transition-colors bg-white border-2 rounded-lg border-amber-200 focus:outline-none focus:border-amber-700"
                       required
                     />
                   </div>
@@ -58,21 +76,21 @@ function ConnexionPage() {
 
                 {/* Mot de passe */}
                 <div>
-                  <label className="block text-amber-900 mb-2 font-semibold">Mot de passe</label>
+                  <label className="block mb-2 font-semibold text-amber-900">Mot de passe</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5" />
+                    <Lock className="absolute w-5 h-5 transform -translate-y-1/2 left-4 top-1/2 text-amber-600" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-12 pr-12 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-700 transition-colors bg-white"
+                      className="w-full py-3 pl-12 pr-12 transition-colors bg-white border-2 rounded-lg border-amber-200 focus:outline-none focus:border-amber-700"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-amber-600 hover:text-amber-800"
+                      className="absolute transform -translate-y-1/2 right-4 top-1/2 text-amber-600 hover:text-amber-800"
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -83,7 +101,7 @@ function ConnexionPage() {
                 <div className="text-right">
                   <button
                     type="button"
-                    className="text-amber-800 hover:text-amber-900 text-sm font-semibold"
+                    className="text-sm font-semibold text-amber-800 hover:text-amber-900"
                   >
                     Mot de passe oublié ?
                   </button>
@@ -92,7 +110,7 @@ function ConnexionPage() {
                 {/* Bouton de connexion */}
                 <button
                   type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-amber-700 via-orange-800 to-green-900 text-white rounded-lg hover:shadow-xl transition-all font-semibold"
+                  className="w-full py-3 font-semibold text-white transition-all rounded-lg bg-gradient-to-r from-amber-700 via-orange-800 to-green-900 hover:shadow-xl"
                 >
                   Se connecter
                 </button>
@@ -112,7 +130,7 @@ function ConnexionPage() {
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="w-full py-3 border-2 border-amber-300 rounded-lg hover:bg-amber-50 transition-colors flex items-center justify-center gap-3"
+                className="flex items-center justify-center w-full gap-3 py-3 transition-colors border-2 rounded-lg border-amber-300 hover:bg-amber-50"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -132,7 +150,7 @@ function ConnexionPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                <span className="text-amber-900 font-semibold">Connexion avec Google</span>
+                <span className="font-semibold text-amber-900">Connexion avec Google</span>
               </button>
 
               {/* Lien vers inscription */}
@@ -141,7 +159,7 @@ function ConnexionPage() {
                   Pas encore de compte ?{' '}
                   <Link
                     to="/inscription"
-                    className="text-amber-900 hover:text-orange-800 font-semibold underline"
+                    className="font-semibold underline text-amber-900 hover:text-orange-800"
                   >
                     S'inscrire
                   </Link>
@@ -149,7 +167,7 @@ function ConnexionPage() {
                 <p className="mt-4 text-amber-800">
                   <Link
                     to="/"
-                    className="text-amber-900 hover:text-orange-800 font-semibold"
+                    className="font-semibold text-amber-900 hover:text-orange-800"
                   >
                     ← Retour à l'accueil
                   </Link>
