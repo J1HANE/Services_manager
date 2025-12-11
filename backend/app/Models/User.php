@@ -15,7 +15,7 @@ class User extends Authenticatable
         'nom',
         'prenom',
         'email',
-        'mot_de_passe',
+        'mot_de_passe',   // colonne réelle dans ta table
         'surnom',
         'role',
         'telephone',
@@ -46,14 +46,9 @@ class User extends Authenticatable
         return $this->hasMany(Demande::class, 'client_id');
     }
 
-    // Accessors & Mutators
+    // (Optionnel) alias pour accéder via $user->password si tu veux
     public function getPasswordAttribute()
     {
-        return $this->mot_de_passe;
-    }
-
-    public function setPasswordAttribute($value)
-    {
-        $this->attributes['mot_de_passe'] = bcrypt($value);
+        return $this->attributes['mot_de_passe'] ?? null;
     }
 }

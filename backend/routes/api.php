@@ -30,6 +30,11 @@ use App\Http\Controllers\API\Admin\DocumentValidationController;
 use App\Http\Controllers\API\Admin\UserManagementController;
 use App\Http\Controllers\API\Artisan\CategoryController; 
 
+
+
+use App\Http\Controllers\API\Auth\GoogleAuthController;
+
+
 /*
 |--------------------------------------------------------------------------
 | API ROUTES - MEDINA BRUSH
@@ -45,6 +50,11 @@ use App\Http\Controllers\API\Artisan\CategoryController;
 // ====================================================
 
 // --- AUTHENTIFICATION ---
+
+
+Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirectToGoogle']);
+Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
+
 // React envoie {nom, email, password, role...} pour inscrire un nouvel utilisateur
 Route::post('/register', [AuthController::class, 'register']);
 
