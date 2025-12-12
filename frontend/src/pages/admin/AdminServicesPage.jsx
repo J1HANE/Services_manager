@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import API from '../../api/axios';
 import AdminGuard from '../../components/admin/AdminGuard';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Archive, PackageCheck, Search, Filter, X, Eye, MapPin, Star, User } from 'lucide-react';
+import FilterButtons from '../../components/admin/FilterButtons';
+import { Archive, PackageCheck, Eye, MapPin, Star, User } from 'lucide-react';
 
 const StatusBadge = ({ status, estActif }) => {
   if (status === 'archive') {
@@ -53,8 +54,10 @@ export default function AdminServicesPage() {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatut, setFilterStatut] = useState(searchParams.get('statut') || '');
-  const [filterType, setFilterType] = useState(searchParams.get('type_service') || '');
+  const [filters, setFilters] = useState({
+    statut: searchParams.get('statut') || '',
+    type_service: searchParams.get('type_service') || '',
+  });
   const [selectedService, setSelectedService] = useState(null);
 
   const fetchServices = async () => {
@@ -62,8 +65,8 @@ export default function AdminServicesPage() {
     setError('');
     try {
       const params = new URLSearchParams();
-      if (filterStatut) params.append('statut', filterStatut);
-      if (filterType) params.append('type_service', filterType);
+      if (filters.statut) params.append('statut', filters.statut);
+      if (filters.type_service) params.append('type_service', filters.type_service);
       
       const res = await API.get(`/admin/services?${params.toString()}`);
       let data = res.data?.data || res.data || [];
@@ -90,7 +93,7 @@ export default function AdminServicesPage() {
 
   useEffect(() => {
     fetchServices();
-  }, [filterStatut, filterType]);
+  }, [filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -141,9 +144,16 @@ export default function AdminServicesPage() {
     }
   };
 
-  const clearFilters = () => {
-    setFilterStatut('');
-    setFilterType('');
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    const params = new URLSearchParams();
+    if (newFilters.statut) params.set('statut', newFilters.statut);
+    if (newFilters.type_service) params.set('type_service', newFilters.type_service);
+    setSearchParams(params);
+  };
+
+  const handleReset = () => {
+    setFilters({ statut: '', type_service: '' });
     setSearchTerm('');
     setSearchParams({});
   };
@@ -151,60 +161,26 @@ export default function AdminServicesPage() {
   return (
     <AdminGuard>
       <AdminLayout title="Gestion des Services">
-        {/* Filters and Search */}
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Rechercher par titre, description, ville ou intervenant..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Filter className="w-5 h-5 text-slate-500" />
-            <select
-              value={filterStatut}
-              onChange={(e) => {
-                setFilterStatut(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), statut: e.target.value || undefined });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            >
-              <option value="">Tous les statuts</option>
-              <option value="actif">Actifs</option>
-              <option value="archive">Archivés</option>
-            </select>
-
-            <select
-              value={filterType}
-              onChange={(e) => {
-                setFilterType(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), type_service: e.target.value || undefined });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            >
-              <option value="">Tous les types</option>
-              <option value="electricite">Électricité</option>
-              <option value="peinture">Peinture</option>
-              <option value="menuiserie">Menuiserie</option>
-            </select>
-
-            {(filterStatut || filterType) && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
-              >
-                <X className="w-4 h-4" /> Réinitialiser
-              </button>
-            )}
-          </div>
-        </div>
+        {/* Filters */}
+        <FilterButtons
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleReset}
+          filterOptions={{
+            statuts: [
+              { value: 'actif', label: 'Actifs' },
+              { value: 'archive', label: 'Archivés' }
+            ],
+            types: [
+              { value: 'electricite', label: 'Électricité' },
+              { value: 'peinture', label: 'Peinture' },
+              { value: 'menuiserie', label: 'Menuiserie' }
+            ]
+          }}
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Rechercher par titre, description, ville ou intervenant..."
+        />
 
         {/* Messages */}
         {error && (

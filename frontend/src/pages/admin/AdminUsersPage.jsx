@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import API from '../../api/axios';
 import AdminGuard from '../../components/admin/AdminGuard';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { CheckCircle, XCircle, Shield, Search, Filter, X } from 'lucide-react';
+import FilterButtons from '../../components/admin/FilterButtons';
+import { CheckCircle, XCircle, Shield } from 'lucide-react';
 
 const StatusBadge = ({ verified, banned }) => {
   if (banned) {
@@ -49,18 +50,20 @@ export default function AdminUsersPage() {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState(searchParams.get('role') || '');
-  const [filterVerified, setFilterVerified] = useState(searchParams.get('est_verifie') || '');
-  const [filterBanned, setFilterBanned] = useState(searchParams.get('is_banned') || '');
+  const [filters, setFilters] = useState({
+    role: searchParams.get('role') || '',
+    est_verifie: searchParams.get('est_verifie') || '',
+    is_banned: searchParams.get('is_banned') || '',
+  });
 
   const fetchUsers = async () => {
     setLoading(true);
     setError('');
     try {
       const params = new URLSearchParams();
-      if (filterRole) params.append('role', filterRole);
-      if (filterVerified) params.append('est_verifie', filterVerified);
-      if (filterBanned) params.append('is_banned', filterBanned);
+      if (filters.role) params.append('role', filters.role);
+      if (filters.est_verifie) params.append('est_verifie', filters.est_verifie);
+      if (filters.is_banned) params.append('is_banned', filters.is_banned);
       
       const res = await API.get(`/admin/users?${params.toString()}`);
       let data = res.data?.data || res.data || [];
@@ -85,7 +88,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [filterRole, filterVerified, filterBanned]);
+  }, [filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -122,10 +125,17 @@ export default function AdminUsersPage() {
     }
   };
 
-  const clearFilters = () => {
-    setFilterRole('');
-    setFilterVerified('');
-    setFilterBanned('');
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    const params = new URLSearchParams();
+    if (newFilters.role) params.set('role', newFilters.role);
+    if (newFilters.est_verifie) params.set('est_verifie', newFilters.est_verifie);
+    if (newFilters.is_banned) params.set('is_banned', newFilters.is_banned);
+    setSearchParams(params);
+  };
+
+  const handleReset = () => {
+    setFilters({ role: '', est_verifie: '', is_banned: '' });
     setSearchTerm('');
     setSearchParams({});
   };
@@ -133,73 +143,26 @@ export default function AdminUsersPage() {
   return (
     <AdminGuard>
       <AdminLayout title="Gestion des Utilisateurs">
-        {/* Filters and Search */}
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Rechercher par nom, prénom ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Filter className="w-5 h-5 text-slate-500" />
-            <select
-              value={filterRole}
-              onChange={(e) => {
-                setFilterRole(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), role: e.target.value || undefined });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            >
-              <option value="">Tous les rôles</option>
-              <option value="admin">Admin</option>
-              <option value="intervenant">Intervenant</option>
-              <option value="client">Client</option>
-            </select>
-
-            <select
-              value={filterVerified}
-              onChange={(e) => {
-                setFilterVerified(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), est_verifie: e.target.value || undefined });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            >
-              <option value="">Tous les statuts</option>
-              <option value="true">Vérifiés</option>
-              <option value="false">Non vérifiés</option>
-            </select>
-
-            <select
-              value={filterBanned}
-              onChange={(e) => {
-                setFilterBanned(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), is_banned: e.target.value || undefined });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            >
-              <option value="">Tous</option>
-              <option value="true">Bannis</option>
-              <option value="false">Actifs</option>
-            </select>
-
-            {(filterRole || filterVerified || filterBanned) && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
-              >
-                <X className="w-4 h-4" /> Réinitialiser
-              </button>
-            )}
-          </div>
-        </div>
+        {/* Filters */}
+        <FilterButtons
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleReset}
+          filterOptions={{
+            roles: ['admin', 'intervenant', 'client'],
+            verifiedOptions: [
+              { value: 'true', label: 'Vérifiés' },
+              { value: 'false', label: 'Non vérifiés' }
+            ],
+            bannedOptions: [
+              { value: 'true', label: 'Bannis' },
+              { value: 'false', label: 'Actifs' }
+            ]
+          }}
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Rechercher par nom, prénom ou email..."
+        />
 
         {/* Messages */}
         {error && (

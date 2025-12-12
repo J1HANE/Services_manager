@@ -18,11 +18,13 @@ import DemanderServicePage from './pages/DemanderServicePage';
 import MesDemandesPage from './pages/MesDemandesPage';
 
 // Admin pages
+import AdminWelcomePage from './pages/admin/AdminWelcomePage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminServicesPage from './pages/admin/AdminServicesPage';
 import AdminDemandesPage from './pages/admin/AdminDemandesPage';
 import AdminEvaluationsPage from './pages/admin/AdminEvaluationsPage';
+import AdminReclamationsPage from './pages/admin/AdminReclamationsPage';
 import AdminDocumentsPage from './pages/admin/AdminDocumentsPage';
 
 // Pages de recherche d'intervenants
@@ -50,11 +52,13 @@ function App() {
         <Route path="/tous-services" element={<TousServicesPage />} />
         
         {/* Admin */}
-        <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/admin" element={<AdminWelcomePage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/utilisateurs" element={<AdminUsersPage />} />
         <Route path="/admin/services" element={<AdminServicesPage />} />
         <Route path="/admin/demandes" element={<AdminDemandesPage />} />
         <Route path="/admin/evaluations" element={<AdminEvaluationsPage />} />
+        <Route path="/admin/reclamations" element={<AdminReclamationsPage />} />
         <Route path="/admin/documents" element={<AdminDocumentsPage />} />
         
         <Route path="/espace-pro" element={<EspaceProPage />} />

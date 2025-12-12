@@ -31,6 +31,7 @@ use App\Http\Controllers\API\Admin\UserManagementController;
 use App\Http\Controllers\API\Admin\ServiceManagementController;
 use App\Http\Controllers\API\Admin\EvaluationManagementController;
 use App\Http\Controllers\API\Admin\DemandeManagementController;
+use App\Http\Controllers\API\Admin\ReclamationManagementController;
 use App\Http\Controllers\API\Artisan\CategoryController;
 
 
@@ -169,5 +170,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Validation des Documents
         Route::get('/admin/documents', [DocumentValidationController::class, 'index']);
         Route::post('/admin/documents/{id}/validate', [DocumentValidationController::class, 'validateDoc']);
+
+        // Gestion des Réclamations
+        Route::get('/admin/reclamations', [ReclamationManagementController::class, 'index']);
+        Route::get('/admin/reclamations/stats', [ReclamationManagementController::class, 'stats']);
+        Route::get('/admin/reclamations/{id}', [ReclamationManagementController::class, 'show']);
+        Route::post('/admin/reclamations/{id}/repondre', [ReclamationManagementController::class, 'repondre']);
+        Route::patch('/admin/reclamations/{id}/statut', [ReclamationManagementController::class, 'updateStatut']);
     });
 });

@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import API from '../../api/axios';
 import AdminGuard from '../../components/admin/AdminGuard';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Star, Search, Filter, X, Eye, User, Briefcase, MessageSquare, TrendingUp } from 'lucide-react';
+import FilterButtons from '../../components/admin/FilterButtons';
+import { Star, Eye, User, Briefcase, MessageSquare, TrendingUp } from 'lucide-react';
 
 const CibleBadge = ({ cible }) => {
   if (cible === 'client') {
@@ -46,7 +47,9 @@ export default function AdminEvaluationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCible, setFilterCible] = useState(searchParams.get('cible') || '');
+  const [filters, setFilters] = useState({
+    cible: searchParams.get('cible') || '',
+  });
   const [selectedEvaluation, setSelectedEvaluation] = useState(null);
 
   const fetchEvaluations = async () => {
@@ -54,7 +57,7 @@ export default function AdminEvaluationsPage() {
     setError('');
     try {
       const params = new URLSearchParams();
-      if (filterCible) params.append('cible', filterCible);
+      if (filters.cible) params.append('cible', filters.cible);
       
       const res = await API.get(`/admin/evaluations?${params.toString()}`);
       let data = res.data?.data || res.data || [];
@@ -92,7 +95,7 @@ export default function AdminEvaluationsPage() {
   useEffect(() => {
     fetchEvaluations();
     fetchStats();
-  }, [filterCible]);
+  }, [filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -101,8 +104,15 @@ export default function AdminEvaluationsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const clearFilters = () => {
-    setFilterCible('');
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    const params = new URLSearchParams();
+    if (newFilters.cible) params.set('cible', newFilters.cible);
+    setSearchParams(params);
+  };
+
+  const handleReset = () => {
+    setFilters({ cible: '' });
     setSearchTerm('');
     setSearchParams({});
   };
@@ -135,46 +145,21 @@ export default function AdminEvaluationsPage() {
           </div>
         )}
 
-        {/* Filters and Search */}
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Rechercher par client, intervenant ou commentaire..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Filter className="w-5 h-5 text-slate-500" />
-            <select
-              value={filterCible}
-              onChange={(e) => {
-                setFilterCible(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), cible: e.target.value || undefined });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            >
-              <option value="">Toutes les évaluations</option>
-              <option value="client">Pour Clients</option>
-              <option value="intervenant">Pour Intervenants</option>
-            </select>
-
-            {filterCible && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
-              >
-                <X className="w-4 h-4" /> Réinitialiser
-              </button>
-            )}
-          </div>
-        </div>
+        {/* Filters */}
+        <FilterButtons
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleReset}
+          filterOptions={{
+            types: [
+              { value: 'client', label: 'Pour Clients' },
+              { value: 'intervenant', label: 'Pour Intervenants' }
+            ]
+          }}
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Rechercher par client, intervenant ou commentaire..."
+        />
 
         {/* Messages */}
         {error && (

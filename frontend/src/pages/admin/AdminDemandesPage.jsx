@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import API from '../../api/axios';
 import AdminGuard from '../../components/admin/AdminGuard';
 import AdminLayout from '../../components/admin/AdminLayout';
+import FilterButtons from '../../components/admin/FilterButtons';
 import { 
-  Inbox, Search, Filter, X, Eye, MapPin, Calendar, 
+  Inbox, Eye, MapPin, Calendar, 
   DollarSign, User, Package, Clock, CheckCircle, 
   XCircle, MessageSquare, Loader
 } from 'lucide-react';
@@ -70,10 +71,12 @@ export default function AdminDemandesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatut, setFilterStatut] = useState(searchParams.get('statut') || '');
-  const [filterTypeDemande, setFilterTypeDemande] = useState(searchParams.get('type_demande') || '');
-  const [filterTypeService, setFilterTypeService] = useState(searchParams.get('type_service') || '');
-  const [filterVille, setFilterVille] = useState(searchParams.get('ville') || '');
+  const [filters, setFilters] = useState({
+    statut: searchParams.get('statut') || '',
+    type_demande: searchParams.get('type_demande') || '',
+    type_service: searchParams.get('type_service') || '',
+    ville: searchParams.get('ville') || '',
+  });
   const [selectedDemande, setSelectedDemande] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
@@ -82,10 +85,10 @@ export default function AdminDemandesPage() {
     setError('');
     try {
       const params = new URLSearchParams();
-      if (filterStatut) params.append('statut', filterStatut);
-      if (filterTypeDemande) params.append('type_demande', filterTypeDemande);
-      if (filterTypeService) params.append('type_service', filterTypeService);
-      if (filterVille) params.append('ville', filterVille);
+      if (filters.statut) params.append('statut', filters.statut);
+      if (filters.type_demande) params.append('type_demande', filters.type_demande);
+      if (filters.type_service) params.append('type_service', filters.type_service);
+      if (filters.ville) params.append('ville', filters.ville);
       
       const res = await API.get(`/admin/demandes?${params.toString()}`);
       let data = res.data?.data || res.data || [];
@@ -124,7 +127,7 @@ export default function AdminDemandesPage() {
   useEffect(() => {
     fetchDemandes();
     fetchStats();
-  }, [filterStatut, filterTypeDemande, filterTypeService, filterVille]);
+  }, [filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -146,16 +149,21 @@ export default function AdminDemandesPage() {
     }
   };
 
-  const clearFilters = () => {
-    setFilterStatut('');
-    setFilterTypeDemande('');
-    setFilterTypeService('');
-    setFilterVille('');
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    const params = new URLSearchParams();
+    if (newFilters.statut) params.set('statut', newFilters.statut);
+    if (newFilters.type_demande) params.set('type_demande', newFilters.type_demande);
+    if (newFilters.type_service) params.set('type_service', newFilters.type_service);
+    if (newFilters.ville) params.set('ville', newFilters.ville);
+    setSearchParams(params);
+  };
+
+  const handleReset = () => {
+    setFilters({ statut: '', type_demande: '', type_service: '', ville: '' });
     setSearchTerm('');
     setSearchParams({});
   };
-
-  const hasActiveFilters = filterStatut || filterTypeDemande || filterTypeService || filterVille || searchTerm;
 
   return (
     <AdminGuard>
@@ -203,95 +211,32 @@ export default function AdminDemandesPage() {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-          <div className="flex items-center gap-4 mb-4">
-            <Filter className="w-5 h-5 text-slate-600" />
-            <h3 className="text-lg font-semibold text-slate-900">Filtres</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Search */}
-            <div className="lg:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Rechercher (client, service, adresse...)"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-            </div>
-
-            {/* Statut Filter */}
-            <select
-              value={filterStatut}
-              onChange={(e) => {
-                setFilterStatut(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), statut: e.target.value || null });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-            >
-              <option value="">Tous les statuts</option>
-              <option value="en_attente">En attente</option>
-              <option value="en_discussion">En discussion</option>
-              <option value="accepte">Acceptée</option>
-              <option value="refuse">Refusée</option>
-              <option value="termine">Terminée</option>
-            </select>
-
-            {/* Type Demande Filter */}
-            <select
-              value={filterTypeDemande}
-              onChange={(e) => {
-                setFilterTypeDemande(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), type_demande: e.target.value || null });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-            >
-              <option value="">Tous les types</option>
-              <option value="libre">Libre</option>
-              <option value="categories">Par catégories</option>
-            </select>
-
-            {/* Type Service Filter */}
-            <select
-              value={filterTypeService}
-              onChange={(e) => {
-                setFilterTypeService(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), type_service: e.target.value || null });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-            >
-              <option value="">Tous les services</option>
-              <option value="electricite">Électricité</option>
-              <option value="peinture">Peinture</option>
-              <option value="menuiserie">Menuiserie</option>
-            </select>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <input
-              type="text"
-              placeholder="Filtrer par ville"
-              value={filterVille}
-              onChange={(e) => {
-                setFilterVille(e.target.value);
-                setSearchParams({ ...Object.fromEntries(searchParams), ville: e.target.value || null });
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
-              >
-                <X className="w-4 h-4" /> Réinitialiser
-              </button>
-            )}
-          </div>
-        </div>
+        <FilterButtons
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleReset}
+          filterOptions={{
+            statuts: [
+              { value: 'en_attente', label: 'En attente' },
+              { value: 'en_discussion', label: 'En discussion' },
+              { value: 'accepte', label: 'Acceptée' },
+              { value: 'refuse', label: 'Refusée' },
+              { value: 'termine', label: 'Terminée' }
+            ],
+            types: [
+              { value: 'libre', label: 'Libre' },
+              { value: 'categories', label: 'Par catégories' }
+            ],
+            typeServices: [
+              { value: 'electricite', label: 'Électricité' },
+              { value: 'peinture', label: 'Peinture' },
+              { value: 'menuiserie', label: 'Menuiserie' }
+            ]
+          }}
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Rechercher (client, service, adresse...)"
+        />
 
         {/* Error Message */}
         {error && (

@@ -74,13 +74,6 @@ class User extends Authenticatable
     {
         return $this->attributes['mot_de_passe'] ?? null;
     }
-    public function metiers()
-    {
-        return $this->belongsToMany(Metier::class, 'user_metiers', 'user_id', 'metier_id')
-                    ->withPivot('principal', 'ordre')
-                    ->withTimestamps()
-                    ->orderBy('user_metiers.ordre');
-    }
 
     public function getPrincipalMetierAttribute()
     {
