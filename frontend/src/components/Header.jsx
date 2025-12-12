@@ -1,14 +1,19 @@
-// src/components/Header.jsx
+﻿// src/components/Header.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Home, Plus, User, Shield, ChevronDown, Hammer, Paintbrush, Zap, Menu, X } from 'lucide-react';
 
 export function Header() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isLimited = ['/', '/inscription', '/connexion'].includes(location.pathname);
+
   const [scrolled, setScrolled] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const { scrollY } = useScroll();
 
   const headerOpacity = useTransform(scrollY, [0, 100], [1, 0.95]);
@@ -25,6 +30,34 @@ export function Header() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Lire l'utilisateur stocké pour afficher la session/déconnexion
+  useEffect(() => {
+    const readUser = () => {
+      const saved = localStorage.getItem('user');
+      if (saved) {
+        try {
+          setCurrentUser(JSON.parse(saved));
+        } catch {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    };
+
+    readUser();
+    const onStorage = () => readUser();
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
+    setCurrentUser(null);
+    navigate('/connexion');
+  };
 
   // Fermer les menus mobiles quand on clique à l'extérieur
   useEffect(() => {
@@ -44,8 +77,8 @@ export function Header() {
         backgroundColor: headerBackground,
       }}
       className={`fixed top-0 left-0 right-0 z-50 transition-shadow duration-300 text-black ${
-    scrolled ? 'shadow-lg' : ''
-  }`}
+        scrolled ? 'shadow-lg' : ''
+      }`}
     >
       <div className="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
@@ -59,75 +92,70 @@ export function Header() {
 
           {/* Navigation Desktop */}
           <nav className="items-center hidden gap-6 md:flex">
-            {/* Accueil */}
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700"
             >
               <Home className="w-4 h-4" />
               <span>Accueil</span>
             </Link>
 
-
-
-{/* Services Menu */}
-<div 
-  className="relative"
-  onMouseEnter={() => setServicesOpen(true)}
-  onMouseLeave={() => setServicesOpen(false)}
->
-  <button className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700">
-    <span>Services</span>
-    <ChevronDown className={`w-4 h-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
-  </button>
-  <AnimatePresence>
-    {servicesOpen && (
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.2 }}
-        className="absolute left-0 z-50 w-48 py-2 mt-2 bg-white border border-orange-100 rounded-lg shadow-xl top-full"
-      >
-        {/* REMPLACEZ les ancres par des liens vers les pages */}
-        <Link 
-          to="/menuiserie" 
-          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-          onClick={() => setServicesOpen(false)}
-        >
-          <Hammer className="w-4 h-4 text-orange-600" />
-          <span>Menuiserie</span>
-        </Link>
-        <Link 
-          to="/peinture" 
-          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-          onClick={() => setServicesOpen(false)}
-        >
-          <Paintbrush className="w-4 h-4 text-orange-600" />
-          <span>Peinture</span>
-        </Link>
-        <Link 
-          to="/electricite" 
-          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-          onClick={() => setServicesOpen(false)}
-        >
-          <Zap className="w-4 h-4 text-orange-600" />
-          <span>Électricité</span>
-        </Link>
-        {/* Optionnel : Lien vers tous les services */}
-        <div className="pt-2 mt-2 border-t border-orange-100">
-          <Link 
-            to="/tous-services" 
-            className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-            onClick={() => setServicesOpen(false)}
-          >
-            <span className="text-sm font-semibold">Tous les services</span>
-          </Link>
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-</div>
+            {/* Services Menu */}
+            <div
+              className="relative"
+              onMouseEnter={() => setServicesOpen(true)}
+              onMouseLeave={() => setServicesOpen(false)}
+            >
+              <button className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700">
+                <span>Services</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {servicesOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute left-0 z-50 w-48 py-2 mt-2 bg-white border border-orange-100 rounded-lg shadow-xl top-full"
+                  >
+                    <Link
+                      to="/menuiserie"
+                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                      onClick={() => setServicesOpen(false)}
+                    >
+                      <Hammer className="w-4 h-4 text-orange-600" />
+                      <span>Menuiserie</span>
+                    </Link>
+                    <Link
+                      to="/peinture"
+                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                      onClick={() => setServicesOpen(false)}
+                    >
+                      <Paintbrush className="w-4 h-4 text-orange-600" />
+                      <span>Peinture</span>
+                    </Link>
+                    <Link
+                      to="/electricite"
+                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                      onClick={() => setServicesOpen(false)}
+                    >
+                      <Zap className="w-4 h-4 text-orange-600" />
+                      <span>Électricité</span>
+                    </Link>
+                    <div className="pt-2 mt-2 border-t border-orange-100">
+                      <Link
+                        to="/tous-services"
+                        className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                        onClick={() => setServicesOpen(false)}
+                      >
+                        <span className="text-sm font-semibold">Tous les services</span>
+                      </Link>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Plus Menu */}
             <div
@@ -148,30 +176,43 @@ export function Header() {
                     transition={{ duration: 0.2 }}
                     className="absolute left-0 z-50 w-56 py-2 mt-2 bg-white border border-orange-100 rounded-lg shadow-xl top-full"
                   >
-                    <Link 
-                      to="/publier-service"
-                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-                      onClick={() => setPlusOpen(false)}
-                    >
-                      <Plus className="w-4 h-4 text-orange-600" />
-                      <span>Publier un Service</span>
-                    </Link>
-                    <Link
-                      to="/profil"
-                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-                      onClick={() => setPlusOpen(false)}
-                    >
-                      <User className="w-4 h-4 text-orange-600" />
-                      <span>Mon profil</span>
-                    </Link>
-                    <Link
-                      to="/espace-pro"
-                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-                      onClick={() => setPlusOpen(false)}
-                    >
-                      <Shield className="w-4 h-4 text-orange-600" />
-                      <span>Espace Pro</span>
-                    </Link>
+                    {isLimited ? (
+                      <Link
+                        to="/espace-pro"
+                        className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                        onClick={() => setPlusOpen(false)}
+                      >
+                        <Shield className="w-4 h-4 text-orange-600" />
+                        <span>Espace Pro</span>
+                      </Link>
+                    ) : (
+                      <>
+                        <Link
+                          to="/publier-service"
+                          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                          onClick={() => setPlusOpen(false)}
+                        >
+                          <Plus className="w-4 h-4 text-orange-600" />
+                          <span>Publier un Service</span>
+                        </Link>
+                        <Link
+                          to="/profil"
+                          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                          onClick={() => setPlusOpen(false)}
+                        >
+                          <User className="w-4 h-4 text-orange-600" />
+                          <span>Mon profil</span>
+                        </Link>
+                        <Link
+                          to="/espace-pro"
+                          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                          onClick={() => setPlusOpen(false)}
+                        >
+                          <Shield className="w-4 h-4 text-orange-600" />
+                          <span>Espace Pro</span>
+                        </Link>
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -180,18 +221,42 @@ export function Header() {
 
           {/* Actions */}
           <div className="items-center hidden gap-3 md:flex">
-            <Link 
-              to="/connexion"
-              className="px-4 py-2 text-black transition-colors hover:text-orange-700"
-            >
-              Connexion
-            </Link>
-            <Link
-              to="/inscription"
-              className="px-6 py-2 text-white transition-all rounded-lg shadow-md bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 hover:shadow-lg"
-            >
-              Commencer
-            </Link>
+            {currentUser ? (
+              <>
+                <span className="text-sm text-amber-900">
+                  Bonjour, {currentUser.prenom || currentUser.nom || currentUser.email}
+                </span>
+                {currentUser.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="px-4 py-2 text-black transition-colors hover:text-orange-700"
+                  >
+                    Admin
+                  </Link>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-black transition-colors hover:text-orange-700"
+                >
+                  Déconnexion
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/connexion"
+                  className="px-4 py-2 text-black transition-colors hover:text-orange-700"
+                >
+                  Connexion
+                </Link>
+                <Link
+                  to="/inscription"
+                  className="px-6 py-2 text-white transition-all rounded-lg shadow-md bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 hover:shadow-lg"
+                >
+                  Commencer
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Bouton menu mobile */}
@@ -220,8 +285,8 @@ export function Header() {
               className="mt-4 overflow-hidden bg-white border border-orange-100 rounded-lg shadow-lg mobile-menu-container md:hidden"
             >
               <div className="py-2">
-                <Link 
-                  to="/" 
+                <Link
+                  to="/"
                   className="flex items-center gap-3 px-4 py-3 transition-colors text-amber-900 hover:bg-orange-50"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -229,12 +294,24 @@ export function Header() {
                   <span>Accueil</span>
                 </Link>
 
+                {/* Plus (mobile) : Admin link */}
+                {currentUser?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-3 px-4 py-3 transition-colors text-amber-900 hover:bg-orange-50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span>Admin</span>
+                  </Link>
+                )}
+
                 {/* Services dans menu mobile */}
                 <div className="px-4 py-3">
                   <div className="mb-2 text-sm font-semibold text-amber-700">Services</div>
                   <div className="pl-4 space-y-2">
-                    <a 
-                      href="#services" 
+                    <a
+                      href="#services"
                       className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -264,50 +341,82 @@ export function Header() {
                 <div className="px-4 py-3">
                   <div className="mb-2 text-sm font-semibold text-amber-700">Plus</div>
                   <div className="pl-4 space-y-2">
-                    <Link 
-                      to="/publier-service"
-                      className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Publier un Service</span>
-                    </Link>
-                    <Link
-                      to="/profil"
-                      className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <User className="w-4 h-4" />
-                      <span>Mon profil</span>
-                    </Link>
-                    <Link
-                      to="/espace-pro"
-                      className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Shield className="w-4 h-4" />
-                      <span>Espace Pro</span>
-                    </Link>
+                    {isLimited ? (
+                      <Link
+                        to="/espace-pro"
+                        className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span>Espace Pro</span>
+                      </Link>
+                    ) : (
+                      <>
+                        <Link
+                          to="/publier-service"
+                          className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Publier un Service</span>
+                        </Link>
+                        <Link
+                          to="/profil"
+                          className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <User className="w-4 h-4" />
+                          <span>Mon profil</span>
+                        </Link>
+                        <Link
+                          to="/espace-pro"
+                          className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span>Espace Pro</span>
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="my-2 border-t border-orange-100"></div>
 
                 <div className="px-4 py-2">
-                  <Link
-                    to="/connexion"
-                    className="block w-full px-4 py-2 mb-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Connexion
-                  </Link>
-                  <Link
-                    to="/inscription"
-                    className="block w-full px-4 py-2 text-center text-white transition-all rounded-lg shadow-md bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Commencer
-                  </Link>
+                  {currentUser ? (
+                    <>
+                      <div className="mb-2 text-sm text-amber-900">
+                        Bonjour, {currentUser.prenom || currentUser.nom || currentUser.email}
+                      </div>
+                      <button
+                        className="block w-full px-4 py-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          handleLogout();
+                        }}
+                      >
+                        Déconnexion
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/connexion"
+                        className="block w-full px-4 py-2 mb-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Connexion
+                      </Link>
+                      <Link
+                        to="/inscription"
+                        className="block w-full px-4 py-2 text-center text-white transition-all rounded-lg shadow-md bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Commencer
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

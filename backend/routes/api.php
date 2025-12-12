@@ -28,6 +28,8 @@ use App\Http\Controllers\API\Mission\ReviewController;
 use App\Http\Controllers\API\Admin\DashboardController;
 use App\Http\Controllers\API\Admin\DocumentValidationController;
 use App\Http\Controllers\API\Admin\UserManagementController;
+use App\Http\Controllers\API\Admin\ServiceManagementController;
+use App\Http\Controllers\API\Admin\EvaluationManagementController;
 use App\Http\Controllers\API\Artisan\CategoryController;
 
 
@@ -132,23 +134,33 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/missions/{id}/complete', [MissionWorkflowController::class, 'complete']); // Terminer (Cash reçu)
 
     // Actions du CLIENT après la mission
-    Route::post('/reviews', [ReviewController::class, 'store']); // Laisser une note et un avis
-
-
-    // --------------------------------------------------
+    Route::post('/reviews', [ReviewController::class, 'store']); // Laisser une note et un avis    // --------------------------------------------------
     // E. ESPACE ADMIN (Back-Office)
     // --------------------------------------------------
-    // (Idéalement, ajouter un Middleware 'admin' ici plus tard pour sécuriser)
+    Route::middleware('admin')->group(function () {
+        // Statistiques globales du dashboard
+        Route::get('/admin/stats', [DashboardController::class, 'stats']);
 
-    // Statistiques globales du dashboard
-    Route::get('/admin/stats', [DashboardController::class, 'stats']);
+        // Gestion des Utilisateurs
+        Route::get('/admin/users', [UserManagementController::class, 'index']);
+        Route::get('/admin/users/{id}', [UserManagementController::class, 'show']);
+        Route::patch('/admin/users/{id}/ban', [UserManagementController::class, 'toggleBan']);
+        Route::patch('/admin/users/{id}/verify', [UserManagementController::class, 'toggleVerify']);
 
-    // Gestion des Utilisateurs (Bannissement)
-    Route::get('/admin/users', [UserManagementController::class, 'index']);      // Liste tous les inscrits
-    Route::get('/admin/users/{id}', [UserManagementController::class, 'show']);  // Détail d'un user
-    Route::patch('/admin/users/{id}/ban', [UserManagementController::class, 'toggleBan']); // Bannir/Débannir
+        // Gestion des Services
+        Route::get('/admin/services', [ServiceManagementController::class, 'index']);
+        Route::get('/admin/services/{id}', [ServiceManagementController::class, 'show']);
+        Route::patch('/admin/services/{id}/archive', [ServiceManagementController::class, 'archive']);
+        Route::patch('/admin/services/{id}/activate', [ServiceManagementController::class, 'activate']);
+        Route::patch('/admin/services/{id}/toggle-status', [ServiceManagementController::class, 'toggleStatus']);
 
-    // Validation des Documents
-    Route::get('/admin/documents', [DocumentValidationController::class, 'index']); // Liste docs en attente
-    Route::post('/admin/documents/{id}/validate', [DocumentValidationController::class, 'validateDoc']); // Valider manuel
+        // Gestion des Évaluations
+        Route::get('/admin/evaluations', [EvaluationManagementController::class, 'index']);
+        Route::get('/admin/evaluations/stats', [EvaluationManagementController::class, 'stats']);
+        Route::get('/admin/evaluations/{id}', [EvaluationManagementController::class, 'show']);
+
+        // Validation des Documents
+        Route::get('/admin/documents', [DocumentValidationController::class, 'index']);
+        Route::post('/admin/documents/{id}/validate', [DocumentValidationController::class, 'validateDoc']);
+    });
 });

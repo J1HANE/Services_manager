@@ -10,23 +10,30 @@ class Justificatif extends Model
     use HasFactory;
 
     protected $fillable = [
-        'intervenant_id', 
-        'service_id', 
-        'type_document', 
-        'titre', 
-        'informations', 
-        'nom_fichier', 
-        'chemin_fichier', 
-        'est_verifiee', 
-        'commentaire_admin'
+        'intervenant_id',
+        'service_id',
+        'type_document',
+        'titre',
+        'informations',
+        'nom_fichier',
+        'chemin_fichier',
+        'statut',
+        'est_verifiee',
+        'commentaire_admin',
     ];
 
-    // --- RELATIONS ---
-    public function intervenant() {
+    protected $casts = [
+        'informations' => 'array',
+        'est_verifiee' => 'boolean',
+    ];
+
+    public function intervenant()
+    {
         return $this->belongsTo(User::class, 'intervenant_id');
     }
 
-    public function service() {
+    public function service()
+    {
         return $this->belongsTo(Service::class);
     }
 }

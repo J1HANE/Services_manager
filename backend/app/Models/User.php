@@ -15,12 +15,13 @@ class User extends Authenticatable
         'nom',
         'prenom',
         'email',
-        'mot_de_passe',   // colonne réelle dans ta table
+        'mot_de_passe',
         'surnom',
         'role',
         'telephone',
         'photo_profil',
         'est_verifie',
+        'is_banned',
         'note_moyenne',
         'nb_avis',
     ];
@@ -31,6 +32,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'est_verifie' => 'boolean',
+        'is_banned' => 'boolean',
         'note_moyenne' => 'decimal:2',
         'nb_avis' => 'integer',
     ];
@@ -46,7 +48,12 @@ class User extends Authenticatable
         return $this->hasMany(Demande::class, 'client_id');
     }
 
-    // (Optionnel) alias pour accéder via $user->password si tu veux
+    public function justificatifs()
+    {
+        return $this->hasMany(Justificatif::class, 'intervenant_id');
+    }
+
+    // (Optionnel) alias pour accéder via $user->password
     public function getPasswordAttribute()
     {
         return $this->attributes['mot_de_passe'] ?? null;

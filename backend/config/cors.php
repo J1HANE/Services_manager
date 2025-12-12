@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 return [
 
@@ -13,9 +13,10 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:5173',      // Vite (Local)
-        'http://127.0.0.1:5173',      // Vite (IP)
-        'http://localhost:3000',      // React standard (au cas où)
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://192.168.56.1:5173',
     ],
 
     'allowed_origins_patterns' => [],
