@@ -1,9 +1,21 @@
 // src/components/ServiceDetailsModal.jsx
 import React from 'react';
-import { X, MapPin, Star, Phone, Mail, User, Calendar, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, MapPin, Star, Phone, Mail, User, Calendar, Package, FileText } from 'lucide-react';
 
 export function ServiceDetailsModal({ service, onClose }) {
+    const navigate = useNavigate();
+    
     if (!service) return null;
+    
+    // Vérifier si l'utilisateur est connecté comme client
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isClient = user.role === 'client';
+    
+    const handleDemanderService = () => {
+        onClose(); // Fermer le modal
+        navigate(`/demander-service/${service.id}`);
+    };
 
     // Helper function to get full image URL
     const getImageUrl = (imagePath) => {
@@ -336,9 +348,18 @@ export function ServiceDetailsModal({ service, onClose }) {
 
                     {/* Action Buttons */}
                     <div className="mt-8 flex gap-4">
+                        {isClient && (
+                            <button
+                                onClick={handleDemanderService}
+                                className="flex-1 px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-semibold text-lg shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                            >
+                                <FileText className="w-5 h-5" />
+                                Faire une demande
+                            </button>
+                        )}
                         <button
                             onClick={() => alert(`Contacter ${intervenant.surnom}`)}
-                            className="flex-1 px-6 py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-lg hover:from-orange-700 hover:to-amber-700 transition-all font-semibold text-lg shadow-lg hover:shadow-xl"
+                            className={`px-6 py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-lg hover:from-orange-700 hover:to-amber-700 transition-all font-semibold text-lg shadow-lg hover:shadow-xl ${isClient ? 'flex-1' : 'flex-1'}`}
                         >
                             Contacter l'intervenant
                         </button>

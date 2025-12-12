@@ -19,6 +19,7 @@ class SearchController extends Controller
         $ville = $request->input('ville');
         $typeService = $request->input('type_service');
         $searchTerm = $request->input('search');
+        $serviceId = $request->input('service_id');
 
         // Construire la requête pour récupérer les services actifs
         $query = Service::with([
@@ -43,6 +44,11 @@ class SearchController extends Controller
         // Filtrer par type de service si spécifié
         if ($typeService) {
             $query->where('type_service', $typeService);
+        }
+
+        // Filtrer par ID de service si spécifié
+        if ($serviceId) {
+            $query->where('id', $serviceId);
         }
 
         // Filtrer par terme de recherche (titre ou description)

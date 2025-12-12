@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Plus, User, Shield, ChevronDown, Hammer, Paintbrush, Zap, Menu, X } from 'lucide-react';
+import { Home, Plus, User, Shield, ChevronDown, Hammer, Paintbrush, Zap, Menu, X, Inbox } from 'lucide-react';
 
 export function Header() {
   const navigate = useNavigate();
@@ -264,6 +264,15 @@ export function Header() {
                 <span className="text-sm text-amber-900">
                   Bonjour, {currentUser.prenom || currentUser.nom || currentUser.email}
                 </span>
+                {currentUser.role === 'client' && (
+                  <Link
+                    to="/mes-demandes"
+                    className="flex items-center gap-2 px-4 py-2 text-black transition-colors hover:text-orange-700"
+                  >
+                    <Inbox className="w-4 h-4" />
+                    Mes demandes
+                  </Link>
+                )}
                 {currentUser.role === 'admin' && (
                   <Link
                     to="/admin"
@@ -458,6 +467,26 @@ export function Header() {
                       <div className="mb-2 text-sm text-amber-900">
                         Bonjour, {currentUser.prenom || currentUser.nom || currentUser.email}
                       </div>
+                      {currentUser.role === 'client' && (
+                        <Link
+                          to="/mes-demandes"
+                          className="flex items-center gap-2 mb-2 px-4 py-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Inbox className="w-4 h-4" />
+                          <span>Mes demandes</span>
+                        </Link>
+                      )}
+                      {currentUser.role === 'admin' && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center gap-2 mb-2 px-4 py-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span>Admin</span>
+                        </Link>
+                      )}
                       <button
                         className="block w-full px-4 py-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
                         onClick={() => {

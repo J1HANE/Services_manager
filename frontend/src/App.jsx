@@ -14,6 +14,8 @@ import ConnexionPage from './pages/ConnexionPage';
 import InscriptionPage from './pages/InscriptionPage';
 import ServiceWizardPage from './pages/ServiceWizardPage';
 import EspaceProPage from './pages/EspaceProPage';
+import DemanderServicePage from './pages/DemanderServicePage';
+import MesDemandesPage from './pages/MesDemandesPage';
 
 // Admin pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -54,6 +56,8 @@ function App() {
         <Route path="/admin/documents" element={<AdminDocumentsPage />} />
         
         <Route path="/espace-pro" element={<EspaceProPage />} />
+        <Route path="/demander-service/:serviceId" element={<DemanderServicePage />} />
+        <Route path="/mes-demandes" element={<MesDemandesPage />} />
         
         {/* Route 404 */}
         <Route path="*" element={
