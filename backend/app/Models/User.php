@@ -11,19 +11,19 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = [
+     protected $fillable = [
         'nom',
         'prenom',
         'email',
-        'mot_de_passe',
-        'surnom',
-        'role',
         'telephone',
+        'mot_de_passe',
+        'role',
+        'metier',
         'photo_profil',
         'est_verifie',
         'is_banned',
         'note_moyenne',
-        'nb_avis',
+        'nb_avis'
     ];
 
     protected $hidden = [
@@ -57,5 +57,17 @@ class User extends Authenticatable
     public function getPasswordAttribute()
     {
         return $this->attributes['mot_de_passe'] ?? null;
+    }
+    public function metiers()
+    {
+        return $this->belongsToMany(Metier::class, 'user_metiers', 'user_id', 'metier_id')
+                    ->withPivot('principal', 'ordre')
+                    ->withTimestamps()
+                    ->orderBy('user_metiers.ordre');
+    }
+
+    public function getPrincipalMetierAttribute()
+    {
+        return $this->metiers()->wherePivot('principal', 1)->first();
     }
 }

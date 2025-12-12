@@ -102,7 +102,7 @@ export function Header() {
             {/* Accueil */}
             <Link 
               to="/" 
-              className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700"
+              className="flex items-center gap-2 text-black transition-colorshhh hover:text-orange-700"
             >
               <Home className="w-4 h-4" />
               <span>Accueil</span>
@@ -116,7 +116,7 @@ export function Header() {
   onMouseEnter={() => setServicesOpen(true)}
   onMouseLeave={() => setServicesOpen(false)}
 >
-  <button className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700">
+  <button className="flex items-center gap-2 text-black transition-colors hover:text-orange-700">
     <span>Services</span>
     <ChevronDown className={`w-4 h-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
   </button>
