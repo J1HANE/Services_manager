@@ -14,8 +14,6 @@ import ConnexionPage from './pages/ConnexionPage';
 import InscriptionPage from './pages/InscriptionPage';
 import ServiceWizardPage from './pages/ServiceWizardPage';
 import EspaceProPage from './pages/EspaceProPage';
-import EvaluationPage from './pages/EvaluationPage';
-import MesDemandesPage from './pages/MesDemandesPage';
 
 // Admin pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -55,12 +53,7 @@ function App() {
         <Route path="/admin/evaluations" element={<AdminEvaluationsPage />} />
         <Route path="/admin/documents" element={<AdminDocumentsPage />} />
         
-        {/* Routes temporaires */}
-        <Route path="/profil" element={<MesDemandesPage />} />
-        <Route path="/mes-demandes" element={<MesDemandesPage />} />
-        
         <Route path="/espace-pro" element={<EspaceProPage />} />
-        <Route path="/evaluation/:id" element={<EvaluationPage />} />
         
         {/* Route 404 */}
         <Route path="*" element={
