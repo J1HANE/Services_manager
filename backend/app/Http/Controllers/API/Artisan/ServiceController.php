@@ -11,10 +11,24 @@ class ServiceController extends Controller
      * Lister les services de l'artisan connecté.
      * Route: GET /api/my-services
      */
-    public function index()
+    public function index(Request $request)
     {
-        // TODO: Récupérer l'ID de l'artisan connecté via Auth.
-        // TODO: Retourner la liste de ses services depuis la BDD.
+        $intervenantId = $request->user()->id;
+        
+        $services = \App\Models\Service::where('intervenant_id', $intervenantId)
+            ->with(['categories', 'disponibilites'])
+            ->orderByDesc('created_at')
+            ->get();
+        
+        // Add calculated attributes
+        $services->transform(function ($service) {
+            $service->moyenne_note = $service->note_moyenne ?? 0;
+            $service->nb_avis = $service->nb_avis ?? 0;
+            $service->demandes_count = $service->demandes()->count();
+            return $service;
+        });
+        
+        return response()->json($services);
     }
 
     /**

@@ -15,6 +15,7 @@ use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\API\Artisan\ServiceController;
 use App\Http\Controllers\API\Artisan\JustificatifController;
 use App\Http\Controllers\API\Artisan\DisponibiliteController;
+use App\Http\Controllers\API\Artisan\DemandeController as ArtisanDemandeController;
 
 // Module Client
 use App\Http\Controllers\API\Client\SearchController;
@@ -101,6 +102,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/services', [ServiceController::class, 'store']);          // Créer un nouveau service
     Route::put('/services/{id}', [ServiceController::class, 'update']);     // Modifier prix/description
     Route::patch('/services/{id}/toggle', [ServiceController::class, 'toggleStatus']); // Activer/Désactiver (Switch)
+    
+    // 1.1. Demandes reçues par l'intervenant
+    Route::get('/artisan/demandes', [ArtisanDemandeController::class, 'index']);
 
     // 2. Disponibilités (Agenda)
     Route::get('/services/{serviceId}/disponibilites', [DisponibiliteController::class, 'index']); // Voir agenda
@@ -122,6 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Voir l'historique de mes demandes (Dashboard Client)
     Route::get('/demandes', [DemandeController::class, 'index']);
+    Route::get('/demandes/{id}', [DemandeController::class, 'show']);
 
 
     // --------------------------------------------------

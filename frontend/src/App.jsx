@@ -13,6 +13,9 @@ import LandingPage from './pages/LandingPage';
 import ConnexionPage from './pages/ConnexionPage';
 import InscriptionPage from './pages/InscriptionPage';
 import ServiceWizardPage from './pages/ServiceWizardPage';
+import EspaceProPage from './pages/EspaceProPage';
+import EvaluationPage from './pages/EvaluationPage';
+import MesDemandesPage from './pages/MesDemandesPage';
 
 // Admin pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -53,43 +56,11 @@ function App() {
         <Route path="/admin/documents" element={<AdminDocumentsPage />} />
         
         {/* Routes temporaires */}
-        <Route path="/profil" element={
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <div className="flex-grow bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 flex items-center justify-center">
-              <div className="text-center p-8 bg-white/90 rounded-2xl shadow-lg">
-                <h1 className="text-3xl font-bold text-amber-900 mb-4">Mon Profil</h1>
-                <p className="text-gray-600 mb-6">Cette page sera disponible prochainement.</p>
-                <Link 
-                  to="/" 
-                  className="px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all"
-                >
-                  Retour à l'accueil
-                </Link>
-              </div>
-            </div>
-            <Footer />
-          </div>
-        } />
+        <Route path="/profil" element={<MesDemandesPage />} />
+        <Route path="/mes-demandes" element={<MesDemandesPage />} />
         
-        <Route path="/espace-pro" element={
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <div className="flex-grow bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 flex items-center justify-center">
-              <div className="text-center p-8 bg-white/90 rounded-2xl shadow-lg">
-                <h1 className="text-3xl font-bold text-amber-900 mb-4">Espace Professionnel</h1>
-                <p className="text-gray-600 mb-6">Cette page sera disponible prochainement.</p>
-                <Link 
-                  to="/" 
-                  className="px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all"
-                >
-                  Retour à l'accueil
-                </Link>
-              </div>
-            </div>
-            <Footer />
-          </div>
-        } />
+        <Route path="/espace-pro" element={<EspaceProPage />} />
+        <Route path="/evaluation/:id" element={<EvaluationPage />} />
         
         {/* Route 404 */}
         <Route path="*" element={
