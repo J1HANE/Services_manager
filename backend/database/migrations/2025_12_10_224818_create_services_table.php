@@ -17,6 +17,8 @@ return new class extends Migration
             $table->enum('type_service', ['electricite', 'peinture', 'menuiserie']);
             $table->string('titre', 150);
             $table->text('description')->nullable();
+            $table->string('image_principale')->nullable();
+            $table->json('images_supplementaires')->nullable();
             $table->boolean('est_actif')->default(true);
             $table->enum('statut', ['actif', 'archive'])->default('actif')->comment('Statut du service: actif ou archivé');
             $table->string('ville', 100)->nullable();
@@ -25,11 +27,6 @@ return new class extends Migration
             $table->decimal('longitude', 11, 8)->nullable();
             $table->integer('rayon_km')->default(20);
             $table->json('parametres_specifiques')->nullable();
-            $table->integer('nb_avis')->default(0);
-            $table->integer('moyenne_note')->default(0);
-            $table->integer('moyenne_ponctualite')->default(0);
-            $table->integer('moyenne_proprete')->default(0);
-            $table->integer('moyenne_qualite')->default(0);
             $table->timestamps();
         });
     }

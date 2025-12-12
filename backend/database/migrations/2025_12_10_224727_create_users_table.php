@@ -22,8 +22,6 @@ return new class extends Migration
             $table->string('telephone', 50)->nullable();
             $table->string('photo_profil')->nullable();
             $table->boolean('est_verifie')->default(false);
-            $table->decimal('note_moyenne', 3, 2)->default(0.00);
-            $table->integer('nb_avis')->default(0);
             $table->timestamps();
         });
     }
