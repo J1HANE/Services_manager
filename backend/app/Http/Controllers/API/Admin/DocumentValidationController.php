@@ -3,27 +3,62 @@
 namespace App\Http\Controllers\API\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Justificatif;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DocumentValidationController extends Controller
 {
     /**
-     * Lister les documents en attente de validation.
      * Route: GET /api/admin/documents
      */
     public function index()
     {
-        // TODO: Récupérer les justificatifs avec statut 'en_attente'.
+        $docs = Justificatif::with(['intervenant:id,email,nom,prenom,est_verifie,is_banned'])
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json($docs);
     }
 
     /**
-     * Valider ou Rejeter manuellement un document.
      * Route: POST /api/admin/documents/{id}/validate
      */
     public function validateDoc(Request $request, string $id)
     {
-        // TODO: Mettre à jour le statut (accepte/refuse).
-        // TODO: Si refusé, ajouter un commentaire explicatif pour l'artisan.
-        // TODO: Mettre à jour 'est_verifie' sur le User si tous ses docs sont OK.
+        $request->validate([
+            'status' => 'required|in:validated,rejected',
+            'commentaire_admin' => 'nullable|string',
+        ]);
+
+        $doc = Justificatif::with('intervenant')->findOrFail($id);
+
+        if ($request->status === 'validated') {
+            $doc->statut = 'valide';
+            $doc->est_verifiee = true;
+            $doc->commentaire_admin = $request->commentaire_admin;
+            $doc->save();
+
+            // If all docs for intervenant are validated, mark user verified.
+            $hasPending = Justificatif::where('intervenant_id', $doc->intervenant_id)
+                ->where('statut', 'en_attente')
+                ->exists();
+
+            if (!$hasPending) {
+                User::where('id', $doc->intervenant_id)->update(['est_verifie' => true]);
+            }
+        } else {
+            $doc->statut = 'refuse';
+            $doc->est_verifiee = false;
+            $doc->commentaire_admin = $request->commentaire_admin;
+            $doc->save();
+
+            User::where('id', $doc->intervenant_id)->update(['est_verifie' => false]);
+        }
+
+        return response()->json([
+            'message' => 'Document mis à jour',
+            'document' => $doc,
+        ]);
     }
 }

@@ -1,16 +1,17 @@
-// src/pages/LandingPage.jsx (version simplifiée sans footer)
+﻿// src/pages/LandingPage.jsx (version simplifiée sans footer)
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Shield, Clock, Users, Hammer, Paintbrush, Zap, Star, CheckCircle, ChevronDown, Home, Plus, User } from 'lucide-react';
 import Footer from '../components/Footer'; // Import du footer séparé
 import { Header } from '../components/Header';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
+  const navigate = useNavigate();
   const { scrollY } = useScroll();
   const headerOpacity = useTransform(scrollY, [0, 100], [1, 0.95]);
   const headerBackground = useTransform(
@@ -114,17 +115,24 @@ export default function LandingPage() {
       type: 'Intervenant',
       name: 'Ahmed K.',
       role: 'Électricien',
-      text: 'Grâce à cette plateforme, j\'ai pu élargir ma clientèle et gérer mes rendez-vous facilement. Interface intuitive et support réactif.',
+      text: "Grâce à cette plateforme, j'ai pu élargir ma clientèle et gérer mes rendez-vous facilement. Interface intuitive et support réactif.",
       rating: 5,
     },
     {
       type: 'Client',
       name: 'Julie M.',
       role: 'Cliente',
-      text: 'Excellente expérience ! J\'ai trouvé un peintre professionnel pour rénover mon appartement. Résultat impeccable et prix transparent.',
+      text: "Excellente expérience ! J'ai trouvé un peintre professionnel pour rénover mon appartement. Résultat impeccable et prix transparent.",
       rating: 5,
     },
   ];
+
+  const goToService = (title) => {
+    if (title === 'Menuiserie') return navigate('/menuiserie');
+    if (title === 'Peinture') return navigate('/peinture');
+    if (title === 'Électricité') return navigate('/electricite');
+    return navigate('/tous-services');
+  };
 
   return (
      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-green-50" style={{ fontFamily: 'Times New Roman, serif' }}>
@@ -178,6 +186,7 @@ export default function LandingPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="px-10 py-5 text-xl text-white transition-all shadow-2xl bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl hover:shadow-3xl"
+                  onClick={() => navigate('/tous-services')}
                 >
                   Découvrir
                 </motion.button>
@@ -254,6 +263,7 @@ export default function LandingPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all min-w-[260px]"
+              onClick={() => navigate('/recherche-intervenants')}
             >
               Client en recherche de service ?
             </motion.button>
@@ -261,6 +271,7 @@ export default function LandingPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 bg-gradient-to-r from-green-700 to-green-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all min-w-[260px]"
+              onClick={() => navigate('/inscription')}
             >
               Intervenant en recherche de clients ?
             </motion.button>
@@ -309,7 +320,10 @@ export default function LandingPage() {
                 <div className="p-6">
                   <h3 className="mb-2 text-2xl text-amber-900">{service.title}</h3>
                   <p className="mb-4 text-green-800">{service.description}</p>
-                  <button className="flex items-center gap-2 text-orange-600 transition-colors hover:text-orange-700 group/btn">
+                  <button 
+                    className="flex items-center gap-2 text-orange-600 transition-colors hover:text-orange-700 group/btn"
+                    onClick={() => goToService(service.title)}
+                  >
                     <span>Découvrir les intervenants</span>
                     <ArrowRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
                   </button>
@@ -507,6 +521,7 @@ export default function LandingPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 transition-all bg-white shadow-lg text-amber-900 rounded-xl hover:shadow-2xl"
+                onClick={() => navigate('/inscription')}
               >
                 Inscription Client
               </motion.button>
@@ -514,6 +529,7 @@ export default function LandingPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 text-white transition-all shadow-lg bg-amber-900 rounded-xl hover:shadow-2xl"
+                onClick={() => navigate('/inscription')}
               >
                 Inscription Intervenant
               </motion.button>

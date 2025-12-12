@@ -1,4 +1,4 @@
-// src/App.jsx
+﻿// src/App.jsx
 import React from 'react';
 import 'leaflet/dist/leaflet.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -13,6 +13,13 @@ import LandingPage from './pages/LandingPage';
 import ConnexionPage from './pages/ConnexionPage';
 import InscriptionPage from './pages/InscriptionPage';
 import ServiceWizardPage from './pages/ServiceWizardPage';
+
+// Admin pages
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminServicesPage from './pages/admin/AdminServicesPage';
+import AdminEvaluationsPage from './pages/admin/AdminEvaluationsPage';
+import AdminDocumentsPage from './pages/admin/AdminDocumentsPage';
 
 // Pages de recherche d'intervenants
 import RechercheIntervenantsPage from './pages/RechercheIntervenantsPage';
@@ -37,6 +44,13 @@ function App() {
         <Route path="/peinture" element={<PeinturePage />} />
         <Route path="/electricite" element={<ElectricitePage />} />
         <Route path="/tous-services" element={<TousServicesPage />} />
+        
+        {/* Admin */}
+        <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/admin/utilisateurs" element={<AdminUsersPage />} />
+        <Route path="/admin/services" element={<AdminServicesPage />} />
+        <Route path="/admin/evaluations" element={<AdminEvaluationsPage />} />
+        <Route path="/admin/documents" element={<AdminDocumentsPage />} />
         
         {/* Routes temporaires */}
         <Route path="/profil" element={
