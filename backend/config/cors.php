@@ -15,11 +15,24 @@ return [
     'allowed_origins' => [
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'http://localhost:5176',
+        'http://127.0.0.1:5176',
+        'http://localhost:5177',
+        'http://127.0.0.1:5177',
+        'http://localhost:5178',
+        'http://127.0.0.1:5178',
         'http://localhost:3000',
         'http://192.168.56.1:5173',
+        'http://192.168.56.1:5176',
+        'http://192.168.56.1:5177',
+        'http://192.168.56.1:5178',
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^http://localhost:\d+$#',
+        '#^http://127\.0\.0\.1:\d+$#',
+        '#^http://192\.168\.\d+\.\d+:\d+$#',
+    ],
 
     'allowed_headers' => ['*'],
 

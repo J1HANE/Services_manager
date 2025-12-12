@@ -45,8 +45,6 @@ class UserSeeder extends Seeder
                 'role' => 'intervenant',
                 'telephone' => '0698765432',
                 'est_verifie' => true,
-                'note_moyenne' => 4.80,
-                'nb_avis' => 12,
             ],
             // COMPTE INTERVENANT ISMAIL LYAMANI (KENITRA) - FOR TESTING
             [
@@ -57,8 +55,6 @@ class UserSeeder extends Seeder
                 'role' => 'intervenant',
                 'telephone' => '0612345678',
                 'est_verifie' => true,
-                'note_moyenne' => 0.00,
-                'nb_avis' => 0,
             ],
         ];
 

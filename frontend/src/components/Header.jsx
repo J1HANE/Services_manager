@@ -37,7 +37,9 @@ export function Header() {
       const saved = localStorage.getItem('user');
       if (saved) {
         try {
-          setCurrentUser(JSON.parse(saved));
+          const user = JSON.parse(saved);
+          setCurrentUser(user);
+          console.log('User loaded in Header:', user);
         } catch {
           setCurrentUser(null);
         }
@@ -47,9 +49,14 @@ export function Header() {
     };
 
     readUser();
+    // Écouter les changements de localStorage (pour détecter la connexion)
+    const interval = setInterval(readUser, 500);
     const onStorage = () => readUser();
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -176,7 +183,38 @@ export function Header() {
                     transition={{ duration: 0.2 }}
                     className="absolute left-0 z-50 w-56 py-2 mt-2 bg-white border border-orange-100 rounded-lg shadow-xl top-full"
                   >
-                    {isLimited ? (
+                    {currentUser ? (
+                      <>
+                        {currentUser.role === 'intervenant' && (
+                          <Link
+                            to="/publier-service"
+                            className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                            onClick={() => setPlusOpen(false)}
+                          >
+                            <Plus className="w-4 h-4 text-orange-600" />
+                            <span>Publier un Service</span>
+                          </Link>
+                        )}
+                        {(currentUser.role === 'intervenant' || currentUser.role === 'client') && (
+                          <Link
+                            to="/profil"
+                            className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                            onClick={() => setPlusOpen(false)}
+                          >
+                            <User className="w-4 h-4 text-orange-600" />
+                            <span>Mon profil</span>
+                          </Link>
+                        )}
+                        <Link
+                          to="/espace-pro"
+                          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+                          onClick={() => setPlusOpen(false)}
+                        >
+                          <Shield className="w-4 h-4 text-orange-600" />
+                          <span>Espace Pro</span>
+                        </Link>
+                      </>
+                    ) : isLimited ? (
                       <Link
                         to="/espace-pro"
                         className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
@@ -341,7 +379,38 @@ export function Header() {
                 <div className="px-4 py-3">
                   <div className="mb-2 text-sm font-semibold text-amber-700">Plus</div>
                   <div className="pl-4 space-y-2">
-                    {isLimited ? (
+                    {currentUser ? (
+                      <>
+                        {currentUser.role === 'intervenant' && (
+                          <Link
+                            to="/publier-service"
+                            className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Publier un Service</span>
+                          </Link>
+                        )}
+                        {(currentUser.role === 'intervenant' || currentUser.role === 'client') && (
+                          <Link
+                            to="/profil"
+                            className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <User className="w-4 h-4" />
+                            <span>Mon profil</span>
+                          </Link>
+                        )}
+                        <Link
+                          to="/espace-pro"
+                          className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span>Espace Pro</span>
+                        </Link>
+                      </>
+                    ) : isLimited ? (
                       <Link
                         to="/espace-pro"
                         className="flex items-center gap-3 py-2 text-amber-900 hover:text-orange-700"
