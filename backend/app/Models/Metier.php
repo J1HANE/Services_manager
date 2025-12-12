@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Metier extends Model
 {
     protected $fillable = ['nom', 'code'];
-    
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'user_metiers', 'metier_id', 'user_id')

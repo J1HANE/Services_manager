@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             CategorieSeeder::class,
+            UserMetierSeeder::class,  // Assign métiers to users
         ]);
     }
 }
