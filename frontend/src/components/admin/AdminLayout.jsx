@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, FileCheck2, LogOut, Shield, Package, Star } from 'lucide-react';
+import { LayoutDashboard, Users, FileCheck2, LogOut, Shield, Package, Star, Inbox } from 'lucide-react';
 
 const NavItem = ({ to, icon: Icon, label }) => {
   const location = useLocation();
@@ -52,6 +52,7 @@ export default function AdminLayout({ title, children }) {
             <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" />
             <NavItem to="/admin/utilisateurs" icon={Users} label="Utilisateurs" />
             <NavItem to="/admin/services" icon={Package} label="Services" />
+            <NavItem to="/admin/demandes" icon={Inbox} label="Demandes" />
             <NavItem to="/admin/evaluations" icon={Star} label="Évaluations" />
             <NavItem to="/admin/documents" icon={FileCheck2} label="Documents" />
           </nav>

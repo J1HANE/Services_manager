@@ -21,6 +21,7 @@ import MesDemandesPage from './pages/MesDemandesPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminServicesPage from './pages/admin/AdminServicesPage';
+import AdminDemandesPage from './pages/admin/AdminDemandesPage';
 import AdminEvaluationsPage from './pages/admin/AdminEvaluationsPage';
 import AdminDocumentsPage from './pages/admin/AdminDocumentsPage';
 
@@ -52,6 +53,7 @@ function App() {
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/utilisateurs" element={<AdminUsersPage />} />
         <Route path="/admin/services" element={<AdminServicesPage />} />
+        <Route path="/admin/demandes" element={<AdminDemandesPage />} />
         <Route path="/admin/evaluations" element={<AdminEvaluationsPage />} />
         <Route path="/admin/documents" element={<AdminDocumentsPage />} />
         

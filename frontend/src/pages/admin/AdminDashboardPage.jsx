@@ -6,7 +6,7 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { 
   Users, Briefcase, FileText, Shield, CheckCircle, XCircle, 
   Archive, Clock, TrendingUp, AlertCircle, ArrowRight,
-  UserCheck, UserX, Package, PackageCheck, FileCheck2, Star
+  UserCheck, UserX, Package, PackageCheck, FileCheck2, Star, Inbox
 } from 'lucide-react';
 
 const StatCard = ({ icon: Icon, label, value, color = 'from-amber-500 to-orange-600', onClick, actionLabel }) => (
@@ -108,6 +108,12 @@ export default function AdminDashboardPage() {
               label="Gérer les services"
               onClick={() => navigate('/admin/services')}
               color="bg-green-600"
+            />
+            <QuickActionButton
+              icon={Inbox}
+              label="Gérer les demandes"
+              onClick={() => navigate('/admin/demandes')}
+              color="bg-indigo-600"
             />
             <QuickActionButton
               icon={Star}
