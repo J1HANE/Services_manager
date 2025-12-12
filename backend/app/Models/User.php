@@ -53,6 +53,22 @@ class User extends Authenticatable
         return $this->hasMany(Justificatif::class, 'intervenant_id');
     }
 
+    public function metiers()
+    {
+        return $this->belongsToMany(Metier::class, 'user_metiers')
+            ->withPivot('principal', 'ordre')
+            ->withTimestamps()
+            ->orderBy('ordre');
+    }
+
+    public function metierPrincipal()
+    {
+        return $this->belongsToMany(Metier::class, 'user_metiers')
+            ->wherePivot('principal', true)
+            ->withPivot('principal', 'ordre')
+            ->withTimestamps();
+    }
+
     // (Optionnel) alias pour accéder via $user->password
     public function getPasswordAttribute()
     {
