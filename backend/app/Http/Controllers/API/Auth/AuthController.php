@@ -152,6 +152,9 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // Load metiers relation so we can return them in the response
+        $user->load('metiers');
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -162,7 +165,14 @@ class AuthController extends Controller
                 'prenom' => $user->prenom,
                 'email' => $user->email,
                 'role' => $user->role,
-                'metier' => $user->metier,
+                'metiers' => $user->metiers->map(function ($metier) {
+                    return [
+                        'code' => $metier->code,
+                        'nom' => $metier->nom,
+                        'principal' => $metier->pivot->principal ?? 0,
+                    ];
+                }),
+                'principal_metier' => $user->metiers->where('pivot.principal', 1)->first()?->code,
                 'photo_profil' => $user->photo_profil ? Storage::url($user->photo_profil) : null,
             ],
             'token' => $token,
@@ -172,7 +182,10 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
-        
+
+        // Ensure metiers relation is loaded
+        $user->load('metiers');
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -180,7 +193,14 @@ class AuthController extends Controller
                 'prenom' => $user->prenom,
                 'email' => $user->email,
                 'role' => $user->role,
-                'metier' => $user->metier,
+                'metiers' => $user->metiers->map(function ($metier) {
+                    return [
+                        'code' => $metier->code,
+                        'nom' => $metier->nom,
+                        'principal' => $metier->pivot->principal ?? 0,
+                    ];
+                }),
+                'principal_metier' => $user->metiers->where('pivot.principal', 1)->first()?->code,
                 'telephone' => $user->telephone,
                 'photo_profil' => $user->photo_profil ? Storage::url($user->photo_profil) : null,
                 'est_verifie' => $user->est_verifie,

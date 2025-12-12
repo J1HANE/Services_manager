@@ -1,6 +1,6 @@
 // src/pages/ServiceWizardPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import Footer from '../components/Footer';
 import {
@@ -29,6 +29,48 @@ function ServiceWizardPage() {
       navigate('/login');
     }
   }, [navigate]);
+
+  // Current user metiers (used to filter allowed service categories)
+  const [userMetiers, setUserMetiers] = useState(null);
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+  // Fetch current authenticated user to know which métiers are allowed
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    const fetchMe = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) return;
+        const result = await res.json();
+        const user = result.user || result;
+
+        let metiers = [];
+        if (user.metiers && Array.isArray(user.metiers)) {
+          metiers = user.metiers.map(m => (typeof m === 'string' ? m : m.code || '')) .filter(Boolean);
+        } else if (user.metier) {
+          metiers = typeof user.metier === 'string' ? [user.metier] : [];
+        } else if (user.principal_metier) {
+          metiers = [user.principal_metier];
+        }
+
+        setUserMetiers(metiers);
+      } catch (error) {
+        console.error('Failed to fetch current user', error);
+      }
+    };
+
+    fetchMe();
+  }, []);
 
   // Étape 1: Informations de base
   const [formData, setFormData] = useState({
@@ -243,6 +285,11 @@ function ServiceWizardPage() {
   };
 
   const handleSubmit = async () => {
+    if (userMetiers !== null && userMetiers.length === 0) {
+      toast.error('Vous devez compléter votre profil (métiers) avant de publier un service');
+      return;
+    }
+
     if (!validateStep(3)) return;
 
     setIsSubmitting(true);
@@ -330,8 +377,27 @@ function ServiceWizardPage() {
   const progress = (currentStep / totalSteps) * 100;
   const selectedCount = categoriesPrices.filter(c => c.selected).length;
 
+  // Compute allowed categories based on authenticated user's métiers (if available)
+  const allowedCategories = userMetiers === null
+    ? categories
+    : categories.filter(c => userMetiers.includes(c.value));
+
+  const cannotProceed = userMetiers !== null && userMetiers.length === 0;
+
+  // If user only has one metier, preselect it. If the currently selected category
+  // is no longer allowed (e.g. user changed metiers), clear it.
+  useEffect(() => {
+    if (!userMetiers) return;
+    if (userMetiers.length === 1 && !categorie) {
+      setCategorie(userMetiers[0]);
+    }
+    if (categorie && userMetiers.length > 0 && !userMetiers.includes(categorie)) {
+      setCategorie('');
+    }
+  }, [userMetiers, categorie]);
+
   const getCategoryColor = () => {
-    const cat = categories.find(c => c.value === categorie);
+    const cat = allowedCategories.find(c => c.value === categorie) || categories.find(c => c.value === categorie);
     return cat ? cat.color : 'amber';
   };
 
@@ -672,8 +738,15 @@ function ServiceWizardPage() {
                     <label className="block text-amber-900 mb-3 font-semibold">
                       Sélectionnez votre catégorie <span className="text-red-500">*</span>
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {categories.map((cat) => {
+                    {cannotProceed ? (
+                      <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg text-red-800">
+                        <p className="font-semibold mb-2">Aucun métier associé à votre compte</p>
+                        <p className="mb-3">Vous devez renseigner vos métiers dans votre profil avant de pouvoir publier un service.</p>
+                        <Link to="/espace-pro" className="inline-block px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">Compléter mon profil</Link>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {allowedCategories.map((cat) => {
                         const Icon = cat.icon;
                         return (
                           <button
@@ -691,7 +764,8 @@ function ServiceWizardPage() {
                           </button>
                         );
                       })}
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Champs spécifiques selon la catégorie */}
@@ -948,7 +1022,8 @@ function ServiceWizardPage() {
                   <button
                     type="button"
                     onClick={handleNext}
-                    className={`flex-1 px-6 py-4 ${colors.bg} text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2`}
+                    disabled={currentStep === 2 && cannotProceed}
+                    className={`flex-1 px-6 py-4 ${colors.bg} text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     Suivant
                     <ArrowRight className="w-5 h-5" />
@@ -957,7 +1032,7 @@ function ServiceWizardPage() {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || cannotProceed}
                     className={`flex-1 px-6 py-4 ${colors.bg} text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <CheckCircle className="w-5 h-5" />
