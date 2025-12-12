@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -92,8 +93,17 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
+        $user = $request->user();
+        $userData = $user->toArray();
+        if (!empty($user->photo_profil)) {
+            // provide full url if stored on public disk
+            $userData['photo_profil_url'] = Storage::disk('public')->url($user->photo_profil);
+        } else {
+            $userData['photo_profil_url'] = null;
+        }
+
         return response()->json([
-            'user' => $request->user(),
+            'user' => $userData,
         ]);
     }
 

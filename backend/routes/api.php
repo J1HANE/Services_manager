@@ -31,6 +31,7 @@ use App\Http\Controllers\API\Admin\UserManagementController;
 use App\Http\Controllers\API\Admin\ServiceManagementController;
 use App\Http\Controllers\API\Admin\EvaluationManagementController;
 use App\Http\Controllers\API\Artisan\CategoryController;
+use App\Http\Controllers\API\ProfileController;
 
 
 
@@ -90,6 +91,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // "Qui suis-je ?" - React appelle ça au chargement pour savoir si l'user est connecté
     Route::get('/me', [AuthController::class, 'me']);
+
+    // Profil utilisateur (afficher / mettre à jour)
+    Route::get('/user/profile', [ProfileController::class, 'show']);
+    Route::put('/user/profile', [ProfileController::class, 'update']);
 
 
     // --------------------------------------------------

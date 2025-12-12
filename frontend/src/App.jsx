@@ -27,6 +27,7 @@ import MenuiseriePage from './pages/MenuiseriePage';
 import PeinturePage from './pages/PeinturePage';
 import ElectricitePage from './pages/ElectricitePage';
 import TousServicesPage from './pages/TousServicesPage';
+import ProfilPage from './pages/ProfilPage';
 
 function App() {
   return (
@@ -53,24 +54,7 @@ function App() {
         <Route path="/admin/documents" element={<AdminDocumentsPage />} />
         
         {/* Routes temporaires */}
-        <Route path="/profil" element={
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <div className="flex-grow bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 flex items-center justify-center">
-              <div className="text-center p-8 bg-white/90 rounded-2xl shadow-lg">
-                <h1 className="text-3xl font-bold text-amber-900 mb-4">Mon Profil</h1>
-                <p className="text-gray-600 mb-6">Cette page sera disponible prochainement.</p>
-                <Link 
-                  to="/" 
-                  className="px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all"
-                >
-                  Retour à l'accueil
-                </Link>
-              </div>
-            </div>
-            <Footer />
-          </div>
-        } />
+        <Route path="/profil" element={<ProfilPage />} />
         
         <Route path="/espace-pro" element={
           <div className="min-h-screen flex flex-col">
