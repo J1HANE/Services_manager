@@ -99,70 +99,75 @@ export function Header() {
 
           {/* Navigation Desktop */}
           <nav className="items-center hidden gap-6 md:flex">
-            <Link
-              to="/"
+            {/* Accueil */}
+            <Link 
+              to="/" 
               className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700"
             >
               <Home className="w-4 h-4" />
               <span>Accueil</span>
             </Link>
 
-            {/* Services Menu */}
-            <div
-              className="relative"
-              onMouseEnter={() => setServicesOpen(true)}
-              onMouseLeave={() => setServicesOpen(false)}
-            >
-              <button className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700">
-                <span>Services</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <AnimatePresence>
-                {servicesOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute left-0 z-50 w-48 py-2 mt-2 bg-white border border-orange-100 rounded-lg shadow-xl top-full"
-                  >
-                    <Link
-                      to="/menuiserie"
-                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-                      onClick={() => setServicesOpen(false)}
-                    >
-                      <Hammer className="w-4 h-4 text-orange-600" />
-                      <span>Menuiserie</span>
-                    </Link>
-                    <Link
-                      to="/peinture"
-                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-                      onClick={() => setServicesOpen(false)}
-                    >
-                      <Paintbrush className="w-4 h-4 text-orange-600" />
-                      <span>Peinture</span>
-                    </Link>
-                    <Link
-                      to="/electricite"
-                      className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-                      onClick={() => setServicesOpen(false)}
-                    >
-                      <Zap className="w-4 h-4 text-orange-600" />
-                      <span>Électricité</span>
-                    </Link>
-                    <div className="pt-2 mt-2 border-t border-orange-100">
-                      <Link
-                        to="/tous-services"
-                        className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
-                        onClick={() => setServicesOpen(false)}
-                      >
-                        <span className="text-sm font-semibold">Tous les services</span>
-                      </Link>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+
+
+{/* Services Menu */}
+<div 
+  className="relative"
+  onMouseEnter={() => setServicesOpen(true)}
+  onMouseLeave={() => setServicesOpen(false)}
+>
+  <button className="flex items-center gap-2 transition-colors text-amber-900 hover:text-orange-700">
+    <span>Services</span>
+    <ChevronDown className={`w-4 h-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+  </button>
+  <AnimatePresence>
+    {servicesOpen && (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+        className="absolute left-0 z-50 w-48 py-2 mt-2 bg-white border border-orange-100 rounded-lg shadow-xl top-full"
+      >
+        {/* REMPLACEZ les ancres par des liens vers les pages */}
+        <Link 
+          to="/menuiserie" 
+          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+          onClick={() => setServicesOpen(false)}
+        >
+          <Hammer className="w-4 h-4 text-orange-600" />
+          <span>Menuiserie</span>
+        </Link>
+        <Link 
+          to="/peinture" 
+          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+          onClick={() => setServicesOpen(false)}
+        >
+          <Paintbrush className="w-4 h-4 text-orange-600" />
+          <span>Peinture</span>
+        </Link>
+        <Link 
+          to="/electricite" 
+          className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+          onClick={() => setServicesOpen(false)}
+        >
+          <Zap className="w-4 h-4 text-orange-600" />
+          <span>Électricité</span>
+        </Link>
+        {/* Optionnel : Lien vers tous les services */}
+        <div className="pt-2 mt-2 border-t border-orange-100">
+          <Link 
+            to="/tous-services" 
+            className="flex items-center w-full gap-3 px-4 py-2 transition-colors text-amber-900 hover:bg-orange-50"
+            onClick={() => setServicesOpen(false)}
+          >
+            <span className="text-sm font-semibold">Tous les services</span>
+          </Link>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+</div>
 
             {/* Plus Menu */}
             <div
@@ -470,7 +475,7 @@ export function Header() {
                       {currentUser.role === 'client' && (
                         <Link
                           to="/mes-demandes"
-                          className="flex items-center gap-2 mb-2 px-4 py-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
+                          className="flex items-center gap-2 px-4 py-2 mb-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           <Inbox className="w-4 h-4" />
@@ -480,7 +485,7 @@ export function Header() {
                       {currentUser.role === 'admin' && (
                         <Link
                           to="/admin"
-                          className="flex items-center gap-2 mb-2 px-4 py-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
+                          className="flex items-center gap-2 px-4 py-2 mb-2 text-center transition-colors rounded-lg text-amber-900 hover:bg-orange-50"
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           <Shield className="w-4 h-4" />
