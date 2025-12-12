@@ -589,7 +589,6 @@ const handleSubmit = async (e) => {
               <ul className="pl-4 space-y-1 list-disc">
                 <li>Le <span className="font-semibold">métier principal</span> sera affiché en premier sur votre profil</li>
                 <li>Vous pourrez créer des services pour chacun de vos métiers</li>
-                <li>Vous pouvez modifier votre choix plus tard dans vos paramètres</li>
               </ul>
             </div>
           </div>
