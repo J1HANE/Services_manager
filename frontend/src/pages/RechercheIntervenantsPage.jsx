@@ -40,6 +40,25 @@ function RechercheIntervenantsPage({ serviceType = null }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper function to get full image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+
+    // If it's already a full URL (http/https), return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+
+    // Otherwise, prefix with backend URL
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+    const backendUrl = API_BASE_URL.replace('/api', '');
+
+    // Remove leading slash if present to avoid double slashes
+    const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+
+    return `${backendUrl}/${cleanPath}`;
+  };
+
   // Fetch services from API on component mount or when serviceType changes
   useEffect(() => {
     const loadServices = async () => {
@@ -320,89 +339,85 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                         : 'border-transparent hover:border-orange-300'
                         }`}
                     >
-                      <div className="p-6">
-                        {/* Header with image and main info */}
-                        <div className="flex gap-4 mb-4">
-                          <div className="relative">
-                            <img
-                              src={intervenant.image}
-                              alt={intervenant.surnom}
-                              className="w-28 h-28 rounded-xl object-cover border-4 border-orange-100 shadow-md"
-                            />
-                            {isSelected && (
-                              <div className="absolute -top-2 -right-2 bg-orange-500 text-white rounded-full p-1.5 shadow-lg">
-                                <MapPin className="w-4 h-4" />
+                      <div className="p-6 flex gap-4">
+                        {/* Image Section */}
+                        <div className="flex-shrink-0">
+                          <img
+                            src={getImageUrl(intervenant.image)}
+                            alt={intervenant.surnom}
+                            className="w-24 h-24 rounded-lg object-cover shadow-md"
+                            onError={(e) => {
+                              e.target.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400';
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h3 className="text-2xl font-bold text-amber-900 mb-1">{intervenant.titre || 'Service sans titre'}</h3>
+                              <p className="text-sm text-amber-700 mb-2">
+                                Par: <span className="font-semibold">{intervenant.intervenant?.surnom || intervenant.surnom}</span>
+                              </p>
+                              <div
+                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-semibold shadow-md"
+                                style={{ backgroundColor: getServiceColor(intervenant.service) }}
+                              >
+                                {getServiceIcon(intervenant.service)}
+                                <span>{getServiceLabel(intervenant.service)}</span>
                               </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 mb-2 text-amber-800">
+                            <MapPin className="w-4 h-4 text-orange-600" />
+                            <span className="font-medium">{intervenant.ville}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                            <span className="font-bold text-amber-900 text-lg">{intervenant.rating}</span>
+                            <span className="text-amber-700 text-sm">({intervenant.nbAvis} avis)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <div className="p-6 pt-0">
+                        <p className="text-amber-800 leading-relaxed mb-4">
+                          {isExpanded ? intervenant.description : shortDescription}
+                        </p>
+                        {intervenant.description.length > 120 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCardExpansion(intervenant.id);
+                            }}
+                            className="text-orange-600 hover:text-orange-700 font-semibold flex items-center gap-1 transition-colors"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <span>Voir moins</span>
+                                <ChevronUp className="w-4 h-4" />
+                              </>
+                            ) : (
+                              <>
+                                <span>Lire la suite</span>
+                                <ChevronDown className="w-4 h-4" />
+                              </>
                             )}
-                          </div>
-
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <h3 className="text-2xl font-bold text-amber-900 mb-1">{intervenant.titre || 'Service sans titre'}</h3>
-                                <p className="text-sm text-amber-700 mb-2">
-                                  Par: <span className="font-semibold">{intervenant.intervenant?.surnom || intervenant.surnom}</span>
-                                </p>
-                                <div
-                                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-semibold shadow-md"
-                                  style={{ backgroundColor: getServiceColor(intervenant.service) }}
-                                >
-                                  {getServiceIcon(intervenant.service)}
-                                  <span>{getServiceLabel(intervenant.service)}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 mb-2 text-amber-800">
-                              <MapPin className="w-4 h-4 text-orange-600" />
-                              <span className="font-medium">{intervenant.ville}</span>
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                              <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
-                              <span className="font-bold text-amber-900 text-lg">{intervenant.rating}</span>
-                              <span className="text-amber-700 text-sm">({intervenant.nbAvis} avis)</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Description */}
-                        <div className="mb-4">
-                          <p className="text-amber-800 leading-relaxed">
-                            {isExpanded ? intervenant.description : shortDescription}
-                          </p>
-                          {intervenant.description.length > 120 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleCardExpansion(intervenant.id);
-                              }}
-                              className="mt-2 text-orange-600 hover:text-orange-700 font-semibold flex items-center gap-1 transition-colors"
-                            >
-                              {isExpanded ? (
-                                <>
-                                  <span>Voir moins</span>
-                                  <ChevronUp className="w-4 h-4" />
-                                </>
-                              ) : (
-                                <>
-                                  <span>Lire la suite</span>
-                                  <ChevronDown className="w-4 h-4" />
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
+                          </button>
+                        )}
 
                         {/* Details Grid */}
-                        <div className="grid grid-cols-2 gap-3 mb-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-orange-100">
+                        <div className="grid grid-cols-2 gap-3 my-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-orange-100">
                           <div>
-                            <span className="text-amber-700 text-sm block mb-1">Tarif</span>
-                            <span className="font-bold text-amber-900 text-lg">{intervenant.tarif}</span>
+                            <span className="text-amber-700 text-sm block mb-1">Missions</span>
+                            <span className="font-bold text-amber-900 text-lg">{intervenant.missions_completees || 0}</span>
                           </div>
                           <div>
-                            <span className="text-amber-700 text-sm block mb-1">Expérience</span>
-                            <span className="font-bold text-amber-900 text-lg">{intervenant.experience}</span>
+                            <span className="text-amber-700 text-sm block mb-1">Catégories</span>
+                            <span className="font-bold text-amber-900 text-lg">{intervenant.total_categories || 0}</span>
                           </div>
                         </div>
 
@@ -482,9 +497,12 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                         <Popup>
                           <div className="p-3" style={{ fontFamily: 'Times New Roman, serif', minWidth: '220px' }}>
                             <img
-                              src={intervenant.image}
+                              src={getImageUrl(intervenant.image)}
                               alt={intervenant.surnom}
                               className="w-20 h-20 rounded-lg object-cover mb-3 mx-auto shadow-md"
+                              onError={(e) => {
+                                e.target.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400';
+                              }}
                             />
                             <h3 className="font-bold text-amber-900 mb-1 text-center text-lg">{intervenant.titre || 'Service'}</h3>
                             <p className="text-xs text-amber-700 mb-2 text-center">
@@ -547,8 +565,8 @@ function RechercheIntervenantsPage({ serviceType = null }) {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
       <Footer />
 
       {/* Service Details Modal */}
@@ -558,7 +576,7 @@ function RechercheIntervenantsPage({ serviceType = null }) {
           onClose={() => setSelectedServiceDetails(null)}
         />
       )}
-    </div>
+    </div >
   );
 }
 

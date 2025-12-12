@@ -1,9 +1,28 @@
 // src/components/ServiceDetailsModal.jsx
 import React from 'react';
-import { X, MapPin, Star, Phone, Mail, User } from 'lucide-react';
+import { X, MapPin, Star, Phone, Mail, User, Calendar, Package } from 'lucide-react';
 
 export function ServiceDetailsModal({ service, onClose }) {
     if (!service) return null;
+
+    // Helper function to get full image URL
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return null;
+
+        // If it's already a full URL (http/https), return as is
+        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+            return imagePath;
+        }
+
+        // Otherwise, prefix with backend URL
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+        const backendUrl = API_BASE_URL.replace('/api', '');
+
+        // Remove leading slash if present to avoid double slashes
+        const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+
+        return `${backendUrl}/${cleanPath}`;
+    };
 
     const intervenant = service.intervenant || {
         surnom: service.surnom,
@@ -12,6 +31,23 @@ export function ServiceDetailsModal({ service, onClose }) {
         photo_profil: service.image,
         telephone: service.telephone
     };
+
+    const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    const disponibilites = service.disponibilites || [];
+    const categories = service.categories || [];
+
+    // Parse images_supplementaires if it's a JSON string
+    let imagesSupplementaires = [];
+    try {
+        if (typeof service.images_supplementaires === 'string') {
+            imagesSupplementaires = JSON.parse(service.images_supplementaires);
+        } else if (Array.isArray(service.images_supplementaires)) {
+            imagesSupplementaires = service.images_supplementaires;
+        }
+    } catch (e) {
+        console.error('Error parsing images_supplementaires:', e);
+        imagesSupplementaires = [];
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -27,9 +63,12 @@ export function ServiceDetailsModal({ service, onClose }) {
                 {/* Header with Image */}
                 <div className="relative h-64 bg-gradient-to-br from-amber-900 to-orange-800">
                     <img
-                        src={service.image}
+                        src={getImageUrl(service.image)}
                         alt={service.titre}
                         className="w-full h-full object-cover opacity-30"
+                        onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400';
+                        }}
                     />
                     <div className="absolute inset-0 flex items-end p-8">
                         <div>
@@ -52,9 +91,12 @@ export function ServiceDetailsModal({ service, onClose }) {
                         </h3>
                         <div className="flex items-center gap-6">
                             <img
-                                src={intervenant.photo_profil || service.image}
+                                src={getImageUrl(intervenant.photo_profil) || 'https://via.placeholder.com/150'}
                                 alt={intervenant.surnom}
                                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                                onError={(e) => {
+                                    e.target.src = 'https://via.placeholder.com/150';
+                                }}
                             />
                             <div className="flex-1">
                                 <h4 className="text-xl font-bold text-amber-900 mb-1">{intervenant.surnom}</h4>
@@ -72,6 +114,42 @@ export function ServiceDetailsModal({ service, onClose }) {
                             </div>
                         </div>
                     </div>
+
+                    {/* Service Images Gallery */}
+                    {(service.image || imagesSupplementaires.length > 0) && (
+                        <div className="mb-8">
+                            <h3 className="text-2xl font-bold text-amber-900 mb-4">Photos du Service</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {service.image && (
+                                    <div className="relative group">
+                                        <img
+                                            src={getImageUrl(service.image)}
+                                            alt="Image principale"
+                                            className="w-full h-48 object-cover rounded-lg border-2 border-amber-300 shadow-md hover:shadow-xl transition-shadow"
+                                            onError={(e) => {
+                                                e.target.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400';
+                                            }}
+                                        />
+                                        <div className="absolute top-2 left-2 px-2 py-1 bg-amber-600 text-white text-xs font-bold rounded">
+                                            Principale
+                                        </div>
+                                    </div>
+                                )}
+                                {imagesSupplementaires.map((img, index) => (
+                                    <div key={index} className="relative group">
+                                        <img
+                                            src={getImageUrl(img)}
+                                            alt={`Image ${index + 1}`}
+                                            className="w-full h-48 object-cover rounded-lg border-2 border-amber-200 shadow-md hover:shadow-xl transition-shadow"
+                                            onError={(e) => {
+                                                e.target.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400';
+                                            }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Description */}
                     <div className="mb-8">
@@ -154,16 +232,93 @@ export function ServiceDetailsModal({ service, onClose }) {
                         </div>
                     </div>
 
-                    {/* Pricing */}
+
+                    {/* Statistics */}
                     <div className="mb-8">
-                        <h3 className="text-2xl font-bold text-amber-900 mb-4">Tarification</h3>
-                        <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
-                            <div className="text-center">
-                                <div className="text-lg text-green-700 mb-2">Tarif</div>
-                                <div className="text-4xl font-bold text-green-900">{service.tarif}</div>
+                        <h3 className="text-2xl font-bold text-amber-900 mb-4">Statistiques</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200">
+                                <div className="text-center">
+                                    <div className="text-sm text-blue-700 mb-2">Missions Complétées</div>
+                                    <div className="text-4xl font-bold text-blue-900">{service.missions_completees || 0}</div>
+                                </div>
+                            </div>
+                            <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border-2 border-purple-200">
+                                <div className="text-center">
+                                    <div className="text-sm text-purple-700 mb-2">Catégories</div>
+                                    <div className="text-4xl font-bold text-purple-900">{service.total_categories || 0}</div>
+                                </div>
+                            </div>
+                            <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-green-200">
+                                <div className="text-center">
+                                    <div className="text-sm text-green-700 mb-2">Disponible depuis</div>
+                                    <div className="text-lg font-bold text-green-900">
+                                        {service.disponible_depuis ? new Date(service.disponible_depuis).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' }) : 'N/A'}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Availability Days */}
+                    {disponibilites.length > 0 && (
+                        <div className="mb-8">
+                            <h3 className="text-2xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                                <Calendar className="w-6 h-6" />
+                                Jours de Disponibilité
+                            </h3>
+                            <div className="grid grid-cols-7 gap-2">
+                                {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+                                    const isAvailable = disponibilites.includes(day);
+                                    return (
+                                        <div
+                                            key={day}
+                                            className={`p-3 rounded-lg text-center font-semibold transition-all ${isAvailable
+                                                ? 'bg-green-100 text-green-800 border-2 border-green-500'
+                                                : 'bg-gray-100 text-gray-400 border-2 border-gray-200'
+                                                }`}
+                                        >
+                                            <div className="text-xs mb-1">{dayNames[day - 1].substring(0, 3)}</div>
+                                            <div className="text-lg">{isAvailable ? '✓' : '✗'}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Service Categories */}
+                    {categories.length > 0 && (
+                        <div className="mb-8">
+                            <h3 className="text-2xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                                <Package className="w-6 h-6" />
+                                Catégories Disponibles
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {categories.map((category) => (
+                                    <div
+                                        key={category.id}
+                                        className="p-4 bg-white rounded-lg border-2 border-amber-200 hover:border-amber-400 transition-all shadow-sm"
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-amber-900 mb-1">{category.nom}</h4>
+                                                <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full">
+                                                    {category.type_categorie}
+                                                </span>
+                                            </div>
+                                            {category.prix && (
+                                                <div className="text-right">
+                                                    <div className="text-lg font-bold text-green-700">{category.prix}</div>
+                                                    <div className="text-xs text-gray-600">{category.unite_prix}</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Location */}
                     <div>

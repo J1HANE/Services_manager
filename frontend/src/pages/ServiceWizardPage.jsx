@@ -38,7 +38,12 @@ function ServiceWizardPage() {
     adresse: '',
     latitude: '',
     longitude: '',
+    image_principale: null,
+    images_supplementaires: [],
   });
+
+  // Availability days (1=Monday, 7=Sunday)
+  const [disponibilites, setDisponibilites] = useState([]);
 
   // Étape 2: Catégorie et type de service
   const [categorie, setCategorie] = useState('');
@@ -266,26 +271,46 @@ function ServiceWizardPage() {
       };
 
       // Prepare service data for API (intervenant_id will be taken from authenticated user)
-      const serviceData = {
-        type_service: typeServiceMap[categorie],
-        titre: formData.titre,
-        description: formData.description,
-        ville: formData.ville,
-        adresse: formData.adresse,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        rayon_km: 20,
-        parametres_specifiques: specificFields,
-        categories: selectedCategories.map(cat => ({
-          category_id: cat.category_id,
-          prix: parseFloat(cat.prix),
-          unite_prix: uniteMap[cat.unite] || 'par_heure'
-        }))
-      };
+      const formDataToSend = new FormData();
 
-      console.log('Submitting service data:', serviceData);
+      // Add basic fields
+      formDataToSend.append('type_service', typeServiceMap[categorie]);
+      formDataToSend.append('titre', formData.titre);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('ville', formData.ville);
+      formDataToSend.append('adresse', formData.adresse);
+      formDataToSend.append('latitude', formData.latitude ? parseFloat(formData.latitude) : '');
+      formDataToSend.append('longitude', formData.longitude ? parseFloat(formData.longitude) : '');
+      formDataToSend.append('rayon_km', '20');
 
-      const createdService = await createService(serviceData);
+      // Add images
+      if (formData.image_principale) {
+        formDataToSend.append('image_principale', formData.image_principale);
+      }
+
+      if (formData.images_supplementaires && formData.images_supplementaires.length > 0) {
+        formData.images_supplementaires.forEach((file, index) => {
+          formDataToSend.append(`images_supplementaires[${index}]`, file);
+        });
+      }
+
+      // Add availability days
+      formDataToSend.append('disponibilites', JSON.stringify(disponibilites));
+
+      // Add specific parameters
+      formDataToSend.append('parametres_specifiques', JSON.stringify(specificFields));
+
+      // Add categories with pricing
+      const categoriesData = selectedCategories.map(cat => ({
+        category_id: cat.category_id,
+        prix: parseFloat(cat.prix),
+        unite_prix: uniteMap[cat.unite] || 'par_heure'
+      }));
+      formDataToSend.append('categories', JSON.stringify(categoriesData));
+
+      console.log('Submitting service data:', formDataToSend);
+
+      const createdService = await createService(formDataToSend);
 
       console.log('Service created:', createdService);
       toast.success('Service publié avec succès !');
@@ -499,6 +524,136 @@ function ServiceWizardPage() {
                         placeholder="Ex: -6.5802"
                         className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
                       />
+                    </div>
+                  </div>
+
+                  {/* Image Upload Section */}
+                  <div className="space-y-4 mt-6 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
+                    <h3 className="text-lg font-bold text-amber-900 mb-4">Images du Service</h3>
+
+                    {/* Main Image */}
+                    <div>
+                      <label className="block text-amber-900 mb-2 font-semibold">
+                        Image Principale
+                      </label>
+
+                      {formData.image_principale ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={URL.createObjectURL(formData.image_principale)}
+                            alt="Aperçu"
+                            className="w-48 h-48 object-cover rounded-lg border-2 border-amber-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, image_principale: null })}
+                            className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setFormData({ ...formData, image_principale: e.target.files[0] })}
+                            className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors bg-white"
+                          />
+                          <p className="text-sm text-amber-700 mt-1">Photo principale de votre service</p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Additional Images */}
+                    <div>
+                      <label className="block text-amber-900 mb-2 font-semibold">
+                        Images Supplémentaires (optionnel)
+                      </label>
+
+                      {/* Preview Grid */}
+                      {formData.images_supplementaires && formData.images_supplementaires.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          {formData.images_supplementaires.map((file, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Image ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg border-2 border-amber-300"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newImages = formData.images_supplementaires.filter((_, i) => i !== index);
+                                  setFormData({ ...formData, images_supplementaires: newImages });
+                                }}
+                                className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                          const newFiles = Array.from(e.target.files);
+                          const existingFiles = formData.images_supplementaires || [];
+                          setFormData({ ...formData, images_supplementaires: [...existingFiles, ...newFiles] });
+                        }}
+                        className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors bg-white"
+                      />
+                      <p className="text-sm text-amber-700 mt-1">
+                        Ajoutez plusieurs photos de vos réalisations ({formData.images_supplementaires?.length || 0} image(s) sélectionnée(s))
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Availability Days Section */}
+                  <div className="space-y-4 mt-6 p-6 bg-green-50 rounded-lg border-2 border-green-200">
+                    <h3 className="text-lg font-bold text-amber-900 mb-4">Jours de Disponibilité</h3>
+                    <p className="text-sm text-amber-700 mb-4">Sélectionnez les jours où vous êtes disponible</p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { day: 1, label: 'Lundi' },
+                        { day: 2, label: 'Mardi' },
+                        { day: 3, label: 'Mercredi' },
+                        { day: 4, label: 'Jeudi' },
+                        { day: 5, label: 'Vendredi' },
+                        { day: 6, label: 'Samedi' },
+                        { day: 7, label: 'Dimanche' },
+                      ].map(({ day, label }) => (
+                        <label
+                          key={day}
+                          className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${disponibilites.includes(day)
+                            ? 'bg-green-100 border-green-500 text-green-900'
+                            : 'bg-white border-gray-300 text-gray-700 hover:border-green-300'
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={disponibilites.includes(day)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setDisponibilites([...disponibilites, day]);
+                              } else {
+                                setDisponibilites(disponibilites.filter(d => d !== day));
+                              }
+                            }}
+                            className="w-5 h-5 text-green-600"
+                          />
+                          <span className="font-semibold">{label}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
                 </div>

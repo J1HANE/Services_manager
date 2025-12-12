@@ -36,8 +36,11 @@ class ServiceController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'rayon_km' => 'nullable|integer|min:1|max:200',
-            'parametres_specifiques' => 'nullable|array',
-            'categories' => 'required|array|min:1',
+            'image_principale' => 'nullable|image|max:2048',
+            'images_supplementaires.*' => 'nullable|image|max:2048',
+            'disponibilites' => 'nullable|json',
+            'parametres_specifiques' => 'nullable|json',
+            'categories' => 'required|json',
             'categories.*.category_id' => 'required|exists:categories,id',
             'categories.*.prix' => 'required|numeric|min:0',
             'categories.*.unite_prix' => 'required|in:par_heure,par_m2,par_unite,par_service,forfait',
@@ -52,6 +55,27 @@ class ServiceController extends Controller
             ], 422);
         }
 
+        // Handle main image upload
+        $imagePrincipale = null;
+        if ($request->hasFile('image_principale')) {
+            $path = $request->file('image_principale')->store('services', 'public');
+            $imagePrincipale = '/storage/' . $path;
+        }
+
+        // Handle additional images
+        $imagesSupplementaires = [];
+        if ($request->hasFile('images_supplementaires')) {
+            foreach ($request->file('images_supplementaires') as $image) {
+                $path = $image->store('services', 'public');
+                $imagesSupplementaires[] = '/storage/' . $path;
+            }
+        }
+
+        // Parse JSON fields
+        $parametresSpecifiques = $request->has('parametres_specifiques') ? json_decode($request->parametres_specifiques, true) : null;
+        $categoriesData = json_decode($request->categories, true);
+        $disponibilitesData = $request->has('disponibilites') ? json_decode($request->disponibilites, true) : [];
+
         // Create the service
         $service = \App\Models\Service::create([
             'intervenant_id' => $intervenantId,
@@ -63,13 +87,16 @@ class ServiceController extends Controller
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
             'rayon_km' => $validated['rayon_km'] ?? 20,
-            'parametres_specifiques' => $validated['parametres_specifiques'] ?? null,
+            'image_principale' => $imagePrincipale,
+            'images_supplementaires' => json_encode($imagesSupplementaires),
+            'parametres_specifiques' => $parametresSpecifiques,
+            'disponibilites' => json_encode($disponibilitesData), // Add disponibilites
             'est_actif' => true,
             'statut' => 'actif',
         ]);
 
         // Create service_categories pivot entries
-        foreach ($validated['categories'] as $categoryData) {
+        foreach ($categoriesData as $categoryData) { // Use $categoriesData
             \App\Models\ServiceCategorie::create([
                 'service_id' => $service->id,
                 'category_id' => $categoryData['category_id'],
@@ -78,8 +105,19 @@ class ServiceController extends Controller
             ]);
         }
 
+        // Create disponibilites (availability days)
+        if (!empty($disponibilitesData)) {
+            foreach ($disponibilitesData as $day) {
+                \App\Models\Disponibilite::create([
+                    'service_id' => $service->id,
+                    'type_disponibilite' => 'regular',
+                    'jour_semaine' => $day,
+                ]);
+            }
+        }
+
         // Load relationships for response
-        $service->load(['intervenant', 'serviceCategories.categorie']);
+        $service->load(['intervenant', 'serviceCategories.categorie', 'disponibilites']);
 
         return response()->json([
             'success' => true,

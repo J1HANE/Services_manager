@@ -25,8 +25,10 @@ class SearchController extends Controller
             'intervenant' => function ($query) {
                 $query->select('id', 'nom', 'prenom', 'surnom', 'photo_profil', 'telephone');
             },
-            'evaluations', // Load evaluations for rating calculation
-            'categories'   // Load categories for pricing
+            'evaluations',   // Load evaluations for rating calculation
+            'categories',    // Load categories for pricing
+            'disponibilites', // Load availability days
+            'demandes'       // Load demandes for statistics
         ])
             ->where('est_actif', true)
             ->where('statut', 'actif')
@@ -97,9 +99,24 @@ class SearchController extends Controller
                 'moyenne_proprete' => round($service->moyenne_proprete, 1),
                 'moyenne_qualite' => round($service->moyenne_qualite, 1),
 
-                // Pricing and experience
-                'tarif' => $this->formatTarif($service),
-                'experience' => $this->calculateExperience($service->intervenant),
+                // Statistics
+                'missions_completees' => $service->demandes()->where('statut', 'termine')->count(),
+                'total_categories' => $service->categories->count(),
+                'disponible_depuis' => $service->created_at->format('Y-m-d'),
+
+                // Availability days
+                'disponibilites' => $service->disponibilites->where('type_disponibilite', 'regular')->pluck('jour_semaine')->toArray(),
+
+                // Service categories with pricing
+                'categories' => $service->categories->map(function ($category) {
+                    return [
+                        'id' => $category->id,
+                        'nom' => $category->nom,
+                        'type_categorie' => $category->type_categorie,
+                        'prix' => $category->pivot->prix ?? null,
+                        'unite_prix' => $category->pivot->unite_prix ?? null,
+                    ];
+                })->toArray(),
 
                 // Legacy fields for backward compatibility
                 'service' => $service->type_service,

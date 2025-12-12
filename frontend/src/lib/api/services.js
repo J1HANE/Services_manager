@@ -155,14 +155,18 @@ export async function createService(serviceData) {
         // Get auth token from localStorage
         const token = localStorage.getItem('auth_token');
 
+        // Check if serviceData is FormData or regular object
+        const isFormData = serviceData instanceof FormData;
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                // Don't set Content-Type for FormData - browser will set it with boundary
+                ...(!isFormData && { 'Content-Type': 'application/json' }),
                 'Accept': 'application/json',
                 ...(token && { 'Authorization': `Bearer ${token}` }),
             },
-            body: JSON.stringify(serviceData),
+            body: isFormData ? serviceData : JSON.stringify(serviceData),
         });
 
         const result = await response.json();
