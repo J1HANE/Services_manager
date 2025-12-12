@@ -23,8 +23,6 @@ class ServiceManagementController extends Controller
                 'est_actif',
                 'statut',
                 'ville',
-                'nb_avis',
-                'moyenne_note',
                 'created_at',
             ])
             ->orderByDesc('id');
@@ -54,10 +52,24 @@ class ServiceManagementController extends Controller
         // Pagination
         if ($request->filled('per_page')) {
             $perPage = max(1, min(100, (int) $request->input('per_page')));
-            return response()->json($query->paginate($perPage));
+            $services = $query->paginate($perPage);
+            // Add calculated attributes
+            $services->getCollection()->transform(function ($service) {
+                $service->moyenne_note = $service->note_moyenne ?? 0;
+                $service->nb_avis = $service->nb_avis ?? 0;
+                return $service;
+            });
+            return response()->json($services);
         }
 
-        return response()->json($query->get());
+        $services = $query->get();
+        // Add calculated attributes
+        $services->transform(function ($service) {
+            $service->moyenne_note = $service->note_moyenne ?? 0;
+            $service->nb_avis = $service->nb_avis ?? 0;
+            return $service;
+        });
+        return response()->json($services);
     }
 
     /**
@@ -69,6 +81,10 @@ class ServiceManagementController extends Controller
             ->findOrFail($id);
 
         $service->loadCount('demandes');
+        
+        // Add calculated attributes
+        $service->moyenne_note = $service->note_moyenne ?? 0;
+        $service->nb_avis = $service->nb_avis ?? 0;
 
         return response()->json($service);
     }

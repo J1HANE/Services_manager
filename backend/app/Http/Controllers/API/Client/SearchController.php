@@ -92,12 +92,12 @@ class SearchController extends Controller
                     'telephone' => $service->intervenant->telephone ?? '',
                 ],
 
-                // Calculated ratings from evaluations
-                'rating' => round($service->note_moyenne, 1),
-                'nbAvis' => $service->nb_avis,
-                'moyenne_ponctualite' => round($service->moyenne_ponctualite, 1),
-                'moyenne_proprete' => round($service->moyenne_proprete, 1),
-                'moyenne_qualite' => round($service->moyenne_qualite, 1),
+                // Calculated ratings from evaluations (using accessors from Service model)
+                'rating' => round($service->note_moyenne ?? 0, 1),
+                'nbAvis' => $service->nb_avis ?? 0,
+                'moyenne_ponctualite' => round($service->moyenne_ponctualite ?? 0, 1),
+                'moyenne_proprete' => round($service->moyenne_proprete ?? 0, 1),
+                'moyenne_qualite' => round($service->moyenne_qualite ?? 0, 1),
 
                 // Statistics
                 'missions_completees' => $service->demandes()->where('statut', 'termine')->count(),
