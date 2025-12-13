@@ -47,6 +47,15 @@ export function ServiceDetailsModal({ service, onClose }) {
     const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     const disponibilites = service.disponibilites || [];
     const categories = service.categories || [];
+    const subService = service.sub_service || null;
+    const optionsPricing = service?.parametres_specifiques?.options_pricing || null;
+    const groupLabels = {
+        bois: 'Bois',
+        finitions: 'Finitions',
+        typesPeinture: 'Types de peinture',
+        surfaces: 'Surfaces',
+        typesTravaux: 'Types de travaux',
+    };
 
     // Parse images_supplementaires if it's a JSON string
     let imagesSupplementaires = [];
@@ -299,12 +308,71 @@ export function ServiceDetailsModal({ service, onClose }) {
                         </div>
                     )}
 
-                    {/* Service Categories */}
+                    {/* Sous-service (new schema) */}
+                    {subService && (
+                        <div className="mb-8">
+                            <h3 className="text-2xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                                <Package className="w-6 h-6" />
+                                Sous-service
+                            </h3>
+                            <div className="p-6 bg-white rounded-lg border-2 border-amber-200 shadow-sm">
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <div className="text-xl font-bold text-amber-900">{subService.nom}</div>
+                                        {subService.description && (
+                                            <div className="text-amber-700 mt-1">{subService.description}</div>
+                                        )}
+                                    </div>
+                                    {(service.prix || service.unite_prix) && (
+                                        <div className="text-right">
+                                            {service.prix && <div className="text-2xl font-bold text-green-700">{service.prix}</div>}
+                                            {service.unite_prix && <div className="text-xs text-gray-600">{service.unite_prix}</div>}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Options pricing (menuiserie/peinture/electricite) */}
+                    {optionsPricing && (
+                        <div className="mb-8">
+                            <h3 className="text-2xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                                <Package className="w-6 h-6" />
+                                Options & Tarifs
+                            </h3>
+                            <div className="space-y-4">
+                                {Object.entries(optionsPricing).map(([groupKey, rows]) => {
+                                    if (!Array.isArray(rows)) return null;
+                                    const enabled = rows.filter(r => r && r.enabled);
+                                    if (enabled.length === 0) return null;
+                                    return (
+                                        <div key={groupKey} className="p-4 bg-white rounded-lg border-2 border-amber-200">
+                                            <div className="text-sm font-semibold text-amber-900 mb-3">{groupLabels[groupKey] || groupKey}</div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {enabled.map((r) => (
+                                                    <div key={r.nom} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                                        <div className="font-semibold text-amber-900">{r.nom}</div>
+                                                        <div className="text-right">
+                                                            <div className="font-bold text-green-700">{r.prix}</div>
+                                                            <div className="text-xs text-gray-600">{r.unite}</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Legacy categories (optional / backward compatibility) */}
                     {categories.length > 0 && (
                         <div className="mb-8">
                             <h3 className="text-2xl font-bold text-amber-900 mb-4 flex items-center gap-2">
                                 <Package className="w-6 h-6" />
-                                Catégories Disponibles
+                                Options / catégories
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {categories.map((category) => (

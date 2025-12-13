@@ -76,6 +76,10 @@ Route::get('/artisan/{id}', [SearchController::class, 'showProfile']);
 // Récupérer la liste des catégories (ex: pour remplir le select "Type de travaux")
 Route::get('/categories', [CategoryController::class, 'index']); // Ou une closure simple si pas de controller
 
+// New normalized helpers
+Route::get('/service-types', [\App\Http\Controllers\API\Public\ServiceTypeController::class, 'index']);
+Route::get('/sub-services', [\App\Http\Controllers\API\Public\SubServiceController::class, 'index']);
+
 
 // ====================================================
 // SECTION 2 : ROUTES PROTÉGÉES (TOKEN REQUIS)

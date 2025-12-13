@@ -7,7 +7,7 @@ import {
   Hammer, MapPin, Info, Euro, CheckCircle, ArrowRight,
   ArrowLeft, Paintbrush, Zap, Clock, Home
 } from 'lucide-react';
-import { fetchCategories, createService } from '../lib/api/services';
+import { fetchSubServices, createService } from '../lib/api/services';
 
 // Remplacez l'import de toast (sonner@2.0.3 n'existe pas en npm)
 // Utilisez un toast simple ou installez 'sonner'
@@ -78,12 +78,17 @@ function ServiceWizardPage() {
     description: '',
     ville: '',
     adresse: '',
+    latitude: '',
+    longitude: '',
     image_principale: null,
     images_supplementaires: [],
   });
 
   // Sous-services (étape 2 dynamique)
-  
+  const [subServices, setSubServices] = useState([]);
+  const [selectedSubServiceId, setSelectedSubServiceId] = useState('');
+  const [subServicePrice, setSubServicePrice] = useState('');
+  const [subServiceUnit, setSubServiceUnit] = useState('MAD/heure');
 
   // Availability days (1=Monday, 7=Sunday)
   const [disponibilites, setDisponibilites] = useState([]);
@@ -101,17 +106,30 @@ function ServiceWizardPage() {
     typesTravaux: [],
   });
 
-  // Étape 3: Catégories et tarifs
-  const [categoriesPrices, setCategoriesPrices] = useState([]);
-  const [backendCategories, setBackendCategories] = useState([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isLoadingSubServices, setIsLoadingSubServices] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Step 3: Options pricing (stored in parametres_specifiques.options_pricing)
+  const [optionsPricing, setOptionsPricing] = useState(null);
+
+  // Main service types (aligned with backend enum: menuiserie/peinture/electricite)
   const categories = [
-    { value: 'menuisier', label: 'Menuisier', icon: Hammer, color: 'amber' },
-    { value: 'peintre', label: 'Peintre', icon: Paintbrush, color: 'orange' },
-    { value: 'electricien', label: 'Électricien', icon: Zap, color: 'green' },
+    { value: 'menuiserie', label: 'Menuiserie', icon: Hammer, color: 'amber' },
+    { value: 'peinture', label: 'Peinture', icon: Paintbrush, color: 'orange' },
+    { value: 'electricite', label: 'Électricité', icon: Zap, color: 'green' },
   ];
+
+  // User métiers are stored as codes like: menuisier/peintre/electricien.
+  // We map them to backend service types.
+  const metierToTypeService = {
+    menuisier: 'menuiserie',
+    peintre: 'peinture',
+    electricien: 'electricite',
+    // If backend already returns type_service values, keep them working
+    menuiserie: 'menuiserie',
+    peinture: 'peinture',
+    electricite: 'electricite',
+  };
 
   // Options spécifiques pour chaque catégorie
   const typesBoiss = ['Chêne', 'Pin', 'Hêtre', 'Noyer', 'Érable', 'Acajou', 'Bois exotiques', 'Contreplaqué', 'MDF'];
@@ -120,89 +138,131 @@ function ServiceWizardPage() {
   const surfacesPeinture = ['Intérieur résidentiel', 'Extérieur résidentiel', 'Locaux commerciaux', 'Bureaux', 'Façades', 'Plafonds', 'Boiseries', 'Métaux'];
   const typesTravauxElec = ['Installation neuve', 'Rénovation', 'Mise aux normes', 'Dépannage', 'Maintenance', 'Domotique', 'Éclairage', 'Chauffage électrique'];
 
-
-  // Initialiser les catégories de prix selon le métier
-  const initCategoriesPrices = (cat) => {
-    if (cat === 'menuisier') {
-      return [
-        { categorie: 'Fabrication de meubles sur mesure', prix: '350', unite: '€/jour', selected: false },
-        { categorie: 'Installation de placards', prix: '45', unite: '€/m²', selected: false },
-        { categorie: 'Pose de portes intérieures', prix: '120', unite: '€/unité', selected: false },
-        { categorie: 'Pose de portes extérieures', prix: '250', unite: '€/unité', selected: false },
-        { categorie: 'Installation de fenêtres', prix: '180', unite: '€/unité', selected: false },
-        { categorie: 'Pose de parquet', prix: '35', unite: '€/m²', selected: false },
-        { categorie: 'Construction de terrasse bois', prix: '75', unite: '€/m²', selected: false },
-        { categorie: 'Rénovation de meubles', prix: '40', unite: '€/heure', selected: false },
-        { categorie: 'Escaliers sur mesure', prix: '500', unite: '€/jour', selected: false },
-      ];
-    } else if (cat === 'peintre') {
-      return [
-        { categorie: 'Peinture intérieure - murs et plafonds', prix: '25', unite: '€/m²', selected: false },
-        { categorie: 'Peinture extérieure - façade', prix: '35', unite: '€/m²', selected: false },
-        { categorie: 'Peinture de portes et fenêtres', prix: '80', unite: '€/unité', selected: false },
-        { categorie: 'Peinture décorative (pochoirs, motifs)', prix: '45', unite: '€/m²', selected: false },
-        { categorie: 'Peinture de sols (garage, terrasse)', prix: '30', unite: '€/m²', selected: false },
-        { categorie: 'Lasure et traitement du bois', prix: '28', unite: '€/m²', selected: false },
-        { categorie: 'Enduit et préparation des surfaces', prix: '20', unite: '€/m²', selected: false },
-        { categorie: 'Papier peint - pose', prix: '35', unite: '€/m²', selected: false },
-        { categorie: 'Ravalement de façade complet', prix: '400', unite: '€/jour', selected: false },
-      ];
-    } else {
-      return [
-        { categorie: 'Installation électrique complète', prix: '400', unite: '€/jour', selected: false },
-        { categorie: 'Mise aux normes électriques', prix: '350', unite: '€/jour', selected: false },
-        { categorie: 'Installation de prises et interrupteurs', prix: '45', unite: '€/unité', selected: false },
-        { categorie: 'Installation d\'éclairage', prix: '60', unite: '€/point', selected: false },
-        { categorie: 'Installation de tableau électrique', prix: '500', unite: '€/unité', selected: false },
-        { categorie: 'Dépannage électrique', prix: '80', unite: '€/heure', selected: false },
-        { categorie: 'Installation de chauffage électrique', prix: '200', unite: '€/radiateur', selected: false },
-        { categorie: 'Installation de VMC', prix: '450', unite: '€/unité', selected: false },
-        { categorie: 'Installation de borne de recharge véhicule', prix: '800', unite: '€/unité', selected: false },
-        { categorie: 'Domotique et automatisation', prix: '100', unite: '€/heure', selected: false },
-      ];
+  const buildDefaultOptionsPricing = (type) => {
+    if (type === 'menuiserie') {
+      const defaultBoisPrix = {
+        'Chêne': 250,
+        'Pin': 120,
+        'Hêtre': 200,
+        'Noyer': 320,
+        'Érable': 220,
+        'Acajou': 350,
+        'Bois exotiques': 300,
+        'Contreplaqué': 110,
+        'MDF': 90,
+      };
+      const defaultFinitionsPrix = {
+        'Brut': 0,
+        'Vernis': 80,
+        'Lasure': 70,
+        'Peinture': 90,
+        'Huile': 60,
+        'Cire': 60,
+        'Laqué': 120,
+      };
+      return {
+        bois: typesBoiss.map((nom) => ({
+          nom,
+          enabled: true,
+          prix: String(defaultBoisPrix[nom] ?? 150),
+          unite: 'MAD/m²'
+        })),
+        finitions: finitionsMenuiserie.map((nom) => ({
+          nom,
+          enabled: true,
+          // allow Brut = 0, others >0
+          prix: String(defaultFinitionsPrix[nom] ?? 80),
+          unite: 'MAD/service'
+        })),
+      };
     }
+    if (type === 'peinture') {
+      const defaultTypePeinturePrix = {
+        'Acrylique': 30,
+        'Glycéro': 35,
+        'Écologique': 40,
+        'Satinée': 32,
+        'Mate': 30,
+        'Brillante': 34,
+        'Antirouille': 45,
+        'Hydrofuge': 50,
+      };
+      const defaultSurfacePrix = {
+        'Intérieur résidentiel': 25,
+        'Extérieur résidentiel': 35,
+        'Locaux commerciaux': 30,
+        'Bureaux': 28,
+        'Façades': 38,
+        'Plafonds': 27,
+        'Boiseries': 30,
+        'Métaux': 40,
+      };
+      return {
+        typesPeinture: typesPeinture.map((nom) => ({
+          nom,
+          enabled: true,
+          prix: String(defaultTypePeinturePrix[nom] ?? 30),
+          unite: 'MAD/m²'
+        })),
+        surfaces: surfacesPeinture.map((nom) => ({
+          nom,
+          enabled: true,
+          prix: String(defaultSurfacePrix[nom] ?? 30),
+          unite: 'MAD/m²'
+        })),
+      };
+    }
+    if (type === 'electricite') {
+      const defaultTravauxPrix = {
+        'Installation neuve': 300,
+        'Rénovation': 350,
+        'Mise aux normes': 400,
+        'Dépannage': 200,
+        'Maintenance': 180,
+        'Domotique': 500,
+        'Éclairage': 150,
+        'Chauffage électrique': 250,
+      };
+      return {
+        typesTravaux: typesTravauxElec.map((nom) => ({
+          nom,
+          enabled: true,
+          prix: String(defaultTravauxPrix[nom] ?? 200),
+          unite: 'MAD/service'
+        })),
+      };
+    }
+    return null;
   };
 
-  // Fetch categories from backend when service type changes
+
+  // Fetch sub-services from backend when service type changes
   useEffect(() => {
     if (categorie) {
-      const typeServiceMap = {
-        'menuisier': 'menuiserie',
-        'peintre': 'peinture',
-        'electricien': 'electricite'
-      };
-
-      const fetchBackendCategories = async () => {
-        setIsLoadingCategories(true);
+      const fetchBackendSubServices = async () => {
+        setIsLoadingSubServices(true);
         try {
-          const categories = await fetchCategories({
-            type_service: typeServiceMap[categorie]
-          });
-          setBackendCategories(categories);
+          const subs = await fetchSubServices({ type_service: categorie });
+          setSubServices(subs || []);
 
-          // Initialize categoriesPrices with backend categories
-          const initialPrices = categories.map(cat => ({
-            category_id: cat.id,
-            categorie: cat.nom,
-            type_categorie: cat.type_categorie,
-            prix: '50',
-            unite: 'MAD/heure',
-            selected: false
-          }));
-          setCategoriesPrices(initialPrices);
+          // Reset sub-service choice when main category changes
+          setSelectedSubServiceId('');
+          setSubServicePrice('');
+          setSubServiceUnit('MAD/heure');
+          setOptionsPricing(buildDefaultOptionsPricing(categorie));
         } catch (error) {
-          console.error('Error fetching categories:', error);
-          toast.error('Erreur lors du chargement des catégories');
-          // Fallback to hardcoded categories
-          setCategoriesPrices(initCategoriesPrices(categorie));
+          console.error('Error fetching sub-services:', error);
+          toast.error('Erreur lors du chargement des sous-services');
+          setSubServices([]);
+          setOptionsPricing(buildDefaultOptionsPricing(categorie));
         } finally {
-          setIsLoadingCategories(false);
+          setIsLoadingSubServices(false);
         }
       };
 
-      fetchBackendCategories();
+      fetchBackendSubServices();
 
-      // (no sous-services fetch here)
+      // (no categories fetch here anymore)
     }
   }, [categorie]);
 
@@ -228,17 +288,56 @@ function ServiceWizardPage() {
     }));
   };
 
+  const updateOptionRow = (groupKey, nom, patch) => {
+    setOptionsPricing((prev) => {
+      if (!prev || !prev[groupKey]) return prev;
+      return {
+        ...prev,
+        [groupKey]: prev[groupKey].map((row) => row.nom === nom ? { ...row, ...patch } : row),
+      };
+    });
+  };
+
+  const validateOptionsPricing = () => {
+    if (!optionsPricing) return true;
+
+    const validateGroup = (rows, groupLabel) => {
+      const enabledRows = (rows || []).filter(r => r.enabled);
+      if (enabledRows.length === 0) {
+        toast.error(`Veuillez activer au moins une option (${groupLabel})`);
+        return false;
+      }
+      for (const r of enabledRows) {
+        const p = parseFloat(r.prix);
+        // allow 0 for "Brut" finishing
+        if (r.nom === 'Brut') continue;
+        if (r.prix === '' || Number.isNaN(p) || p <= 0) {
+          toast.error(`Prix invalide pour "${r.nom}" (${groupLabel})`);
+          return false;
+        }
+      }
+      return true;
+    };
+
+    if (categorie === 'menuiserie') {
+      return validateGroup(optionsPricing.bois, 'Bois') && validateGroup(optionsPricing.finitions, 'Finitions');
+    }
+    if (categorie === 'peinture') {
+      return validateGroup(optionsPricing.typesPeinture, 'Types de peinture') && validateGroup(optionsPricing.surfaces, 'Surfaces');
+    }
+    if (categorie === 'electricite') {
+      return validateGroup(optionsPricing.typesTravaux, 'Types de travaux');
+    }
+    return true;
+  };
+
 
   const handleCategorieToggle = (index) => {
-    const newCategories = [...categoriesPrices];
-    newCategories[index].selected = !newCategories[index].selected;
-    setCategoriesPrices(newCategories);
+    // removed (no categories in new schema)
   };
 
   const handlePriceChange = (index, field, value) => {
-    const newCategories = [...categoriesPrices];
-    newCategories[index][field] = value;
-    setCategoriesPrices(newCategories);
+    // removed (no categories in new schema)
   };
 
   const validateStep = (step) => {
@@ -247,33 +346,48 @@ function ServiceWizardPage() {
         toast.error('Veuillez remplir la ville et l\'adresse');
         return false;
       }
+      // Required to appear on map search
+      if (formData.latitude === '' || formData.longitude === '') {
+        toast.error('Veuillez renseigner votre latitude et longitude (nécessaire pour apparaître sur la carte)');
+        return false;
+      }
+      const lat = parseFloat(formData.latitude);
+      const lng = parseFloat(formData.longitude);
+      if (Number.isNaN(lat) || lat < -90 || lat > 90 || Number.isNaN(lng) || lng < -180 || lng > 180) {
+        toast.error('Coordonnées GPS invalides (latitude [-90,90], longitude [-180,180])');
+        return false;
+      }
     } else if (step === 2) {
       if (!categorie) {
         toast.error('Veuillez sélectionner une catégorie');
         return false;
       }
-      if (categorie === 'menuisier') {
+      if (!selectedSubServiceId) {
+        toast.error('Veuillez sélectionner un sous-service');
+        return false;
+      }
+      if (!subServicePrice || isNaN(parseFloat(subServicePrice)) || parseFloat(subServicePrice) <= 0) {
+        toast.error('Veuillez renseigner un prix valide pour le sous-service');
+        return false;
+      }
+      if (categorie === 'menuiserie') {
         if (!specificFields.typeBois || specificFields.finitions.length === 0) {
           toast.error('Veuillez remplir tous les champs spécifiques au menuisier');
           return false;
         }
-      } else if (categorie === 'peintre') {
+      } else if (categorie === 'peinture') {
         if (specificFields.typesPeinture.length === 0 || specificFields.surfaces.length === 0) {
           toast.error('Veuillez remplir tous les champs spécifiques au peintre');
           return false;
         }
-      } else if (categorie === 'electricien') {
+      } else if (categorie === 'electricite') {
         if (specificFields.typesTravaux.length === 0) {
           toast.error('Veuillez remplir tous les champs spécifiques à l\'électricien');
           return false;
         }
       }
     } else if (step === 3) {
-      const selectedCategories = categoriesPrices.filter(c => c.selected);
-      if (selectedCategories.length === 0) {
-        toast.error('Veuillez sélectionner au moins une catégorie de service');
-        return false;
-      }
+      if (!validateOptionsPricing()) return false;
     }
     return true;
   };
@@ -299,13 +413,11 @@ function ServiceWizardPage() {
     setIsSubmitting(true);
 
     try {
-      const selectedCategories = categoriesPrices.filter(c => c.selected);
-
       // Map frontend category to database enum
       const typeServiceMap = {
-        'menuisier': 'menuiserie',
-        'peintre': 'peinture',
-        'electricien': 'electricite'
+        menuiserie: 'menuiserie',
+        peinture: 'peinture',
+        electricite: 'electricite',
       };
 
       // Map price units to database enum
@@ -314,10 +426,6 @@ function ServiceWizardPage() {
         'MAD/m²': 'par_m2',
         'MAD/unité': 'par_unite',
         'MAD/jour': 'forfait',
-        'MAD/point': 'par_unite',
-        'MAD/radiateur': 'par_unite',
-        'MAD/système': 'forfait',
-        'MAD/projet': 'forfait',
         'MAD/service': 'par_service'
       };
 
@@ -325,14 +433,17 @@ function ServiceWizardPage() {
       const formDataToSend = new FormData();
 
       // Add basic fields
-      formDataToSend.append('type_service', typeServiceMap[categorie]);
+      formDataToSend.append('type_service', typeServiceMap[categorie] || categorie);
 
       // Auto-generate titre and description from category + specificFields
       const categoryLabel = categories.find(c => c.value === categorie)?.label || categorie;
-      let titreToSend = categoryLabel;
-      let descriptionToSend = `Prestations en ${categoryLabel}`;
+      const subServiceLabel = subServices.find(s => String(s.id) === String(selectedSubServiceId))?.nom;
+      let titreToSend = subServiceLabel ? `${categoryLabel} - ${subServiceLabel}` : categoryLabel;
+      let descriptionToSend = subServiceLabel
+        ? `Sous-service: ${subServiceLabel}. Prestations en ${categoryLabel}.`
+        : `Prestations en ${categoryLabel}`;
 
-      if (categorie === 'menuisier') {
+      if (categorie === 'menuiserie') {
         if (specificFields.typeBois) titreToSend += ` - ${specificFields.typeBois}`;
         if (specificFields.finitions && specificFields.finitions.length) {
           titreToSend += ` (${specificFields.finitions.slice(0,3).join(', ')})`;
@@ -340,10 +451,10 @@ function ServiceWizardPage() {
         } else {
           descriptionToSend = `Travaux de menuiserie: types de bois ${specificFields.typeBois || 'divers'}.`;
         }
-      } else if (categorie === 'peintre') {
+      } else if (categorie === 'peinture') {
         if (specificFields.typesPeinture && specificFields.typesPeinture.length) titreToSend += ` - ${specificFields.typesPeinture.slice(0,2).join(', ')}`;
         if (specificFields.surfaces && specificFields.surfaces.length) descriptionToSend = `Peinture pour surfaces: ${specificFields.surfaces.join(', ')}; types: ${specificFields.typesPeinture.join(', ')}.`;
-      } else if (categorie === 'electricien') {
+      } else if (categorie === 'electricite') {
         if (specificFields.typesTravaux && specificFields.typesTravaux.length) titreToSend += ` - ${specificFields.typesTravaux.slice(0,2).join(', ')}`;
         if (specificFields.typesTravaux && specificFields.typesTravaux.length) descriptionToSend = `Travaux électriques: ${specificFields.typesTravaux.join(', ')}.`;
       }
@@ -352,7 +463,9 @@ function ServiceWizardPage() {
       formDataToSend.append('description', descriptionToSend);
       formDataToSend.append('ville', formData.ville);
       formDataToSend.append('adresse', formData.adresse);
-      // latitude/longitude removed (not required)
+      // GPS coordinates (required for map search)
+      formDataToSend.append('latitude', String(parseFloat(formData.latitude)));
+      formDataToSend.append('longitude', String(parseFloat(formData.longitude)));
       formDataToSend.append('rayon_km', '20');
 
       // Add images
@@ -369,18 +482,16 @@ function ServiceWizardPage() {
       // Add availability days
       formDataToSend.append('disponibilites', JSON.stringify(disponibilites));
 
-      // Add specific parameters
-      formDataToSend.append('parametres_specifiques', JSON.stringify(specificFields));
-
-      // no sous_services to send (using specificFields/categories instead)
-
-      // Add categories with pricing
-      const categoriesData = selectedCategories.map(cat => ({
-        category_id: cat.category_id,
-        prix: parseFloat(cat.prix),
-        unite_prix: uniteMap[cat.unite] || 'par_heure'
+      // Add specific parameters + options pricing
+      formDataToSend.append('parametres_specifiques', JSON.stringify({
+        ...specificFields,
+        options_pricing: optionsPricing,
       }));
-      formDataToSend.append('categories', JSON.stringify(categoriesData));
+
+      // New schema fields (no categories)
+      formDataToSend.append('sub_service_id', String(parseInt(selectedSubServiceId, 10)));
+      formDataToSend.append('prix', String(parseFloat(subServicePrice)));
+      formDataToSend.append('unite_prix', uniteMap[subServiceUnit] || 'par_heure');
 
       console.log('Submitting service data:', formDataToSend);
 
@@ -402,12 +513,15 @@ function ServiceWizardPage() {
   };
 
   const progress = (currentStep / totalSteps) * 100;
-  const selectedCount = categoriesPrices.filter(c => c.selected).length;
 
   // Compute allowed categories based on authenticated user's métiers (if available)
+  const allowedServiceTypes = userMetiers === null
+    ? null
+    : userMetiers.map(m => metierToTypeService[m]).filter(Boolean);
+
   const allowedCategories = userMetiers === null
     ? categories
-    : categories.filter(c => userMetiers.includes(c.value));
+    : categories.filter(c => allowedServiceTypes.includes(c.value));
 
   const cannotProceed = userMetiers !== null && userMetiers.length === 0;
 
@@ -416,9 +530,10 @@ function ServiceWizardPage() {
   useEffect(() => {
     if (!userMetiers) return;
     if (userMetiers.length === 1 && !categorie) {
-      setCategorie(userMetiers[0]);
+      const only = metierToTypeService[userMetiers[0]];
+      if (only) setCategorie(only);
     }
-    if (categorie && userMetiers.length > 0 && !userMetiers.includes(categorie)) {
+    if (categorie && userMetiers.length > 0 && !allowedServiceTypes.includes(categorie)) {
       setCategorie('');
     }
   }, [userMetiers, categorie]);
@@ -469,9 +584,9 @@ function ServiceWizardPage() {
             {/* En-tête */}
             <div className="text-center mb-8">
               <div className={`w-20 h-20 ${colors.bg} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-                {categorie === 'menuisier' && <Hammer className="w-10 h-10 text-white" />}
-                {categorie === 'peintre' && <Paintbrush className="w-10 h-10 text-white" />}
-                {categorie === 'electricien' && <Zap className="w-10 h-10 text-white" />}
+                {categorie === 'menuiserie' && <Hammer className="w-10 h-10 text-white" />}
+                {categorie === 'peinture' && <Paintbrush className="w-10 h-10 text-white" />}
+                {categorie === 'electricite' && <Zap className="w-10 h-10 text-white" />}
                 {!categorie && <Info className="w-10 h-10 text-white" />}
               </div>
               <h1 className="text-4xl text-amber-900 mb-2">Publier un Service</h1>
@@ -521,7 +636,7 @@ function ServiceWizardPage() {
                   Catégorie
                 </span>
                 <span className={`text-xs ${currentStep >= 3 ? colors.text + ' font-semibold' : 'text-amber-600'}`}>
-                  Tarifs
+                  Options
                 </span>
               </div>
             </div>
@@ -572,7 +687,66 @@ function ServiceWizardPage() {
                     </div>
                   </div>
 
-                  {/* Latitude/Longitude removed per new requirements */}
+                  {/* GPS coordinates (required for map search) */}
+                  <div className="space-y-3 mt-4 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                    <p className="text-amber-900 font-semibold">Coordonnées GPS (obligatoires)</p>
+                    <p className="text-amber-700 text-sm">
+                      Pour que votre service apparaisse sur la carte, il faut une latitude et une longitude.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-amber-900 mb-2 font-semibold">
+                          Latitude <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={formData.latitude}
+                          onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                          className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-600 transition-colors"
+                          placeholder="Ex: 34.0209"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-amber-900 mb-2 font-semibold">
+                          Longitude <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={formData.longitude}
+                          onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                          className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-600 transition-colors"
+                          placeholder="Ex: -6.8416"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!navigator.geolocation) {
+                              toast.error('La géolocalisation n\'est pas supportée par votre navigateur');
+                              return;
+                            }
+                            navigator.geolocation.getCurrentPosition(
+                              (pos) => {
+                                setFormData({
+                                  ...formData,
+                                  latitude: String(pos.coords.latitude),
+                                  longitude: String(pos.coords.longitude),
+                                });
+                                toast.success('Position récupérée !');
+                              },
+                              () => toast.error('Impossible de récupérer votre position')
+                            );
+                          }}
+                          className="w-full px-4 py-3 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-semibold"
+                        >
+                          Ma position
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Image Upload Section */}
                   <div className="space-y-4 mt-6 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
@@ -752,7 +926,78 @@ function ServiceWizardPage() {
                   
 
                   {/* Champs spécifiques selon la catégorie */}
-                  {categorie === 'menuisier' && (
+                  {/* Sous-service (DB-backed) + prix */}
+                  {categorie && (
+                    <div className="space-y-4 pt-6 border-t border-amber-200">
+                      <h3 className="text-xl text-amber-900 font-semibold">Sous-service (obligatoire)</h3>
+
+                      {isLoadingSubServices ? (
+                        <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-lg text-amber-800">
+                          Chargement des sous-services...
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <label className="block text-amber-900 mb-2 font-semibold">
+                              Sous-service <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                              value={selectedSubServiceId}
+                              onChange={(e) => setSelectedSubServiceId(e.target.value)}
+                              className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
+                            >
+                              <option value="">Sélectionnez un sous-service</option>
+                              {subServices.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.nom}
+                                </option>
+                              ))}
+                            </select>
+                            {subServices.length === 0 && (
+                              <p className="text-sm text-amber-700 mt-2">
+                                Aucun sous-service trouvé en base pour ce type. Vérifiez les seeders `SubServiceSeeder`.
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-amber-900 mb-2 font-semibold">
+                                Prix (MAD) <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={subServicePrice}
+                                onChange={(e) => setSubServicePrice(e.target.value)}
+                                placeholder="Ex: 100"
+                                className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-amber-900 mb-2 font-semibold">
+                                Unité <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={subServiceUnit}
+                                onChange={(e) => setSubServiceUnit(e.target.value)}
+                                className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
+                              >
+                                <option value="MAD/heure">MAD/heure</option>
+                                <option value="MAD/jour">MAD/jour</option>
+                                <option value="MAD/m²">MAD/m²</option>
+                                <option value="MAD/unité">MAD/unité</option>
+                                <option value="MAD/service">MAD/service</option>
+                              </select>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {categorie === 'menuiserie' && (
                     <div className="space-y-6 pt-6 border-t border-amber-200">
                       <h3 className="text-xl text-amber-900 font-semibold">Paramètres spécifiques - Menuisier</h3>
 
@@ -795,7 +1040,7 @@ function ServiceWizardPage() {
                     </div>
                   )}
 
-                  {categorie === 'peintre' && (
+                  {categorie === 'peinture' && (
                     <div className="space-y-6 pt-6 border-t border-amber-200">
                       <h3 className="text-xl text-amber-900 font-semibold">Paramètres spécifiques - Peintre</h3>
 
@@ -843,7 +1088,7 @@ function ServiceWizardPage() {
                     </div>
                   )}
 
-                  {categorie === 'electricien' && (
+                  {categorie === 'electricite' && (
                     <div className="space-y-6 pt-6 border-t border-amber-200">
                       <h3 className="text-xl text-amber-900 font-semibold">Paramètres spécifiques - Électricien</h3>
 
@@ -878,113 +1123,245 @@ function ServiceWizardPage() {
                 </div>
               )}
 
-              {/* Étape 3: Catégories et tarifs */}
+              {/* Étape 3: Options & Tarifs */}
               {currentStep === 3 && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 mb-6">
                     <Euro className="w-6 h-6 text-amber-700" />
-                    <h2 className="text-2xl text-amber-900">Catégories & Tarifs</h2>
+                    <h2 className="text-2xl text-amber-900">Options & Tarifs</h2>
                   </div>
 
                   <div className={`${colors.bgLight} border-2 ${colors.borderLight} rounded-lg p-4`}>
                     <p className="text-amber-900">
-                      <span className="font-semibold">Sélectionnez les catégories que vous proposez.</span>
-                      <br />
-                      Les prix sont prédéfinis mais modifiables selon votre tarification.
+                      <span className="font-semibold">Définissez vos prix pour les options.</span><br />
+                      Activez les options que vous proposez et indiquez un prix pour chacune.
                     </p>
-                    {selectedCount > 0 && (
-                      <p className="text-amber-700 mt-2 font-semibold">
-                        {selectedCount} catégorie{selectedCount > 1 ? 's' : ''} sélectionnée{selectedCount > 1 ? 's' : ''}
-                      </p>
-                    )}
                   </div>
 
-                  {/* Group categories by type_categorie */}
-                  {['service', 'materiel', 'autre'].map(typeCategorie => {
-                    const categoriesOfType = categoriesPrices.filter(cat => cat.type_categorie === typeCategorie);
-                    if (categoriesOfType.length === 0) return null;
-
-                    const typeCategorieLabels = {
-                      'service': 'Services',
-                      'materiel': 'Matériel',
-                      'autre': 'Autres'
-                    };
-
-                    return (
-                      <div key={typeCategorie} className="space-y-3">
-                        <h3 className="text-lg font-semibold text-amber-900 mt-6 mb-3 flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${colors.bg}`}></div>
-                          {typeCategorieLabels[typeCategorie]}
-                        </h3>
-
-                        {categoriesOfType.map((item, globalIndex) => {
-                          const index = categoriesPrices.indexOf(item);
-                          return (
-                            <div
-                              key={item.category_id}
-                              className={`border-2 rounded-lg p-4 transition-all ${item.selected
-                                ? `${colors.border} ${colors.bgLight}`
-                                : `${colors.borderLight} ${colors.hover}`
-                                }`}
-                            >
-                              <div className="flex items-start gap-4">
-                                <input
-                                  type="checkbox"
-                                  checked={item.selected}
-                                  onChange={() => handleCategorieToggle(index)}
-                                  className="mt-1 w-5 h-5 rounded border-amber-300 focus:ring-amber-500"
-                                />
-
-                                <div className="flex-1">
-                                  <label className="font-semibold text-amber-900 cursor-pointer block mb-2">
-                                    {item.categorie}
+                  {!optionsPricing ? (
+                    <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg text-red-800">
+                      Impossible de charger les options pour ce type.
+                    </div>
+                  ) : (
+                    <>
+                      {categorie === 'menuiserie' && (
+                        <div className="space-y-6">
+                          <div>
+                            <h3 className="text-lg font-semibold text-amber-900 mb-3">Bois (prix)</h3>
+                            <div className="space-y-2">
+                              {optionsPricing.bois.map((row) => (
+                                <div key={row.nom} className="flex flex-col md:flex-row md:items-center gap-3 p-3 border-2 border-amber-200 rounded-lg">
+                                  <label className="flex items-center gap-2 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={row.enabled}
+                                      onChange={(e) => updateOptionRow('bois', row.nom, { enabled: e.target.checked })}
+                                      className="w-5 h-5"
+                                    />
+                                    <span className="font-semibold text-amber-900">{row.nom}</span>
                                   </label>
-
-                                  {item.selected ? (
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex-1 max-w-xs">
-                                        <label className="block text-xs text-amber-700 mb-1">Prix (MAD)</label>
-                                        <input
-                                          type="number"
-                                          value={item.prix}
-                                          onChange={(e) => handlePriceChange(index, 'prix', e.target.value)}
-                                          className={`w-full px-3 py-2 border-2 ${colors.borderLight} rounded-lg focus:outline-none ${colors.focus}`}
-                                          min="0"
-                                          step="0.01"
-                                        />
-                                      </div>
-                                      <div className="flex-1 max-w-xs">
-                                        <label className="block text-xs text-amber-700 mb-1">Unité</label>
-                                        <select
-                                          value={item.unite}
-                                          onChange={(e) => handlePriceChange(index, 'unite', e.target.value)}
-                                          className={`w-full px-3 py-2 border-2 ${colors.borderLight} rounded-lg focus:outline-none ${colors.focus}`}
-                                        >
-                                          <option value="MAD/heure">MAD/heure</option>
-                                          <option value="MAD/jour">MAD/jour</option>
-                                          <option value="MAD/m²">MAD/m²</option>
-                                          <option value="MAD/unité">MAD/unité</option>
-                                          <option value="MAD/point">MAD/point</option>
-                                          <option value="MAD/radiateur">MAD/radiateur</option>
-                                          <option value="MAD/système">MAD/système</option>
-                                          <option value="MAD/projet">MAD/projet</option>
-                                          <option value="MAD/service">MAD/service</option>
-                                        </select>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="text-sm text-amber-600">
-                                      Prix par défaut: <span className="font-semibold">{item.prix} {item.unite}</span>
-                                    </div>
-                                  )}
+                                  <div className="flex gap-2 items-center">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={row.prix}
+                                      onChange={(e) => updateOptionRow('bois', row.nom, { prix: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="w-36 px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                      placeholder="Prix"
+                                    />
+                                    <select
+                                      value={row.unite}
+                                      onChange={(e) => updateOptionRow('bois', row.nom, { unite: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                    >
+                                      <option value="MAD/m²">MAD/m²</option>
+                                      <option value="MAD/unité">MAD/unité</option>
+                                      <option value="MAD/service">MAD/service</option>
+                                    </select>
+                                  </div>
                                 </div>
-                              </div>
+                              ))}
                             </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
+                          </div>
+
+                          <div>
+                            <h3 className="text-lg font-semibold text-amber-900 mb-3">Finitions (prix)</h3>
+                            <div className="space-y-2">
+                              {optionsPricing.finitions.map((row) => (
+                                <div key={row.nom} className="flex flex-col md:flex-row md:items-center gap-3 p-3 border-2 border-amber-200 rounded-lg">
+                                  <label className="flex items-center gap-2 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={row.enabled}
+                                      onChange={(e) => updateOptionRow('finitions', row.nom, { enabled: e.target.checked })}
+                                      className="w-5 h-5"
+                                    />
+                                    <span className="font-semibold text-amber-900">{row.nom}</span>
+                                  </label>
+                                  <div className="flex gap-2 items-center">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={row.prix}
+                                      onChange={(e) => updateOptionRow('finitions', row.nom, { prix: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="w-36 px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                      placeholder="Prix"
+                                    />
+                                    <select
+                                      value={row.unite}
+                                      onChange={(e) => updateOptionRow('finitions', row.nom, { unite: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                    >
+                                      <option value="MAD/service">MAD/service</option>
+                                      <option value="MAD/m²">MAD/m²</option>
+                                      <option value="MAD/unité">MAD/unité</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {categorie === 'peinture' && (
+                        <div className="space-y-6">
+                          <div>
+                            <h3 className="text-lg font-semibold text-amber-900 mb-3">Types de peinture (prix)</h3>
+                            <div className="space-y-2">
+                              {optionsPricing.typesPeinture.map((row) => (
+                                <div key={row.nom} className="flex flex-col md:flex-row md:items-center gap-3 p-3 border-2 border-amber-200 rounded-lg">
+                                  <label className="flex items-center gap-2 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={row.enabled}
+                                      onChange={(e) => updateOptionRow('typesPeinture', row.nom, { enabled: e.target.checked })}
+                                      className="w-5 h-5"
+                                    />
+                                    <span className="font-semibold text-amber-900">{row.nom}</span>
+                                  </label>
+                                  <div className="flex gap-2 items-center">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={row.prix}
+                                      onChange={(e) => updateOptionRow('typesPeinture', row.nom, { prix: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="w-36 px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                      placeholder="Prix"
+                                    />
+                                    <select
+                                      value={row.unite}
+                                      onChange={(e) => updateOptionRow('typesPeinture', row.nom, { unite: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                    >
+                                      <option value="MAD/m²">MAD/m²</option>
+                                      <option value="MAD/service">MAD/service</option>
+                                      <option value="MAD/unité">MAD/unité</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h3 className="text-lg font-semibold text-amber-900 mb-3">Surfaces (prix)</h3>
+                            <div className="space-y-2">
+                              {optionsPricing.surfaces.map((row) => (
+                                <div key={row.nom} className="flex flex-col md:flex-row md:items-center gap-3 p-3 border-2 border-amber-200 rounded-lg">
+                                  <label className="flex items-center gap-2 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={row.enabled}
+                                      onChange={(e) => updateOptionRow('surfaces', row.nom, { enabled: e.target.checked })}
+                                      className="w-5 h-5"
+                                    />
+                                    <span className="font-semibold text-amber-900">{row.nom}</span>
+                                  </label>
+                                  <div className="flex gap-2 items-center">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={row.prix}
+                                      onChange={(e) => updateOptionRow('surfaces', row.nom, { prix: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="w-36 px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                      placeholder="Prix"
+                                    />
+                                    <select
+                                      value={row.unite}
+                                      onChange={(e) => updateOptionRow('surfaces', row.nom, { unite: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                    >
+                                      <option value="MAD/m²">MAD/m²</option>
+                                      <option value="MAD/service">MAD/service</option>
+                                      <option value="MAD/unité">MAD/unité</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {categorie === 'electricite' && (
+                        <div className="space-y-6">
+                          <div>
+                            <h3 className="text-lg font-semibold text-amber-900 mb-3">Types de travaux (prix)</h3>
+                            <div className="space-y-2">
+                              {optionsPricing.typesTravaux.map((row) => (
+                                <div key={row.nom} className="flex flex-col md:flex-row md:items-center gap-3 p-3 border-2 border-amber-200 rounded-lg">
+                                  <label className="flex items-center gap-2 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={row.enabled}
+                                      onChange={(e) => updateOptionRow('typesTravaux', row.nom, { enabled: e.target.checked })}
+                                      className="w-5 h-5"
+                                    />
+                                    <span className="font-semibold text-amber-900">{row.nom}</span>
+                                  </label>
+                                  <div className="flex gap-2 items-center">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={row.prix}
+                                      onChange={(e) => updateOptionRow('typesTravaux', row.nom, { prix: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="w-36 px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                      placeholder="Prix"
+                                    />
+                                    <select
+                                      value={row.unite}
+                                      onChange={(e) => updateOptionRow('typesTravaux', row.nom, { unite: e.target.value })}
+                                      disabled={!row.enabled}
+                                      className="px-3 py-2 border-2 border-amber-200 rounded-lg disabled:opacity-50"
+                                    >
+                                      <option value="MAD/service">MAD/service</option>
+                                      <option value="MAD/heure">MAD/heure</option>
+                                      <option value="MAD/unité">MAD/unité</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 

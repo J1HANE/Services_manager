@@ -13,7 +13,7 @@ import {
   Search, MapPin, Star, Hammer, Paintbrush, Zap,
   ChevronDown, ChevronUp, Navigation, AlertCircle
 } from 'lucide-react';
-import { fetchServices } from '../lib/api/services';
+import { fetchServices, fetchSubServices } from '../lib/api/services';
 import { ServiceDetailsModal } from '../components/ServiceDetailsModal';
 
 // Composant pour centrer la carte
@@ -30,6 +30,8 @@ function MapController({ center }) {
 function RechercheIntervenantsPage({ serviceType = null }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVille, setSelectedVille] = useState('');
+  const [subServices, setSubServices] = useState([]);
+  const [selectedSubServiceId, setSelectedSubServiceId] = useState('');
   const [selectedIntervenant, setSelectedIntervenant] = useState(null);
   const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
   const [expandedCards, setExpandedCards] = useState(new Set());
@@ -70,6 +72,9 @@ function RechercheIntervenantsPage({ serviceType = null }) {
         if (serviceType) {
           params.type_service = serviceType;
         }
+        if (selectedSubServiceId) {
+          params.sub_service_id = selectedSubServiceId;
+        }
 
         const data = await fetchServices(params);
         setIntervenants(data);
@@ -82,12 +87,33 @@ function RechercheIntervenantsPage({ serviceType = null }) {
     };
 
     loadServices();
+  }, [serviceType, selectedSubServiceId]);
+
+  // Fetch sub-services (new schema) for the current serviceType
+  useEffect(() => {
+    const loadSubServices = async () => {
+      if (!serviceType) {
+        setSubServices([]);
+        setSelectedSubServiceId('');
+        return;
+      }
+      try {
+        const subs = await fetchSubServices({ type_service: serviceType });
+        setSubServices(subs || []);
+      } catch (e) {
+        console.error('Failed to load sub-services:', e);
+        setSubServices([]);
+      }
+    };
+    // reset selection when type changes
+    setSelectedSubServiceId('');
+    loadSubServices();
   }, [serviceType]);
 
   // Obtenir toutes les villes uniques
   const villes = useMemo(() => {
     const allVilles = intervenants
-      .filter(i => !serviceType || i.service === serviceType)
+      .filter(i => !serviceType || i.type_service === serviceType)
       .map(i => i.ville);
     return Array.from(new Set(allVilles)).sort();
   }, [intervenants, serviceType]);
@@ -95,7 +121,7 @@ function RechercheIntervenantsPage({ serviceType = null }) {
   // Filtrer les intervenants
   const filteredIntervenants = useMemo(() => {
     return intervenants.filter(intervenant => {
-      const matchService = !serviceType || intervenant.service === serviceType;
+      const matchService = !serviceType || intervenant.type_service === serviceType;
       const matchSearch = !searchTerm ||
         intervenant.surnom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         intervenant.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -262,6 +288,24 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5 pointer-events-none" />
               </div>
+
+              {/* Filtre par sous-service (only when a main service type is selected) */}
+              {serviceType && (
+                <div className="relative">
+                  <Hammer className="absolute left-4 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5 pointer-events-none" />
+                  <select
+                    value={selectedSubServiceId}
+                    onChange={(e) => setSelectedSubServiceId(e.target.value)}
+                    className="pl-12 pr-10 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-orange-500 transition-colors appearance-none bg-white min-w-[260px] cursor-pointer"
+                  >
+                    <option value="">Tous les sous-services</option>
+                    {subServices.map((s) => (
+                      <option key={s.id} value={s.id}>{s.nom}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5 pointer-events-none" />
+                </div>
+              )}
             </div>
 
             {/* Résultats */}
@@ -361,10 +405,10 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                               </p>
                               <div
                                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-semibold shadow-md"
-                                style={{ backgroundColor: getServiceColor(intervenant.service) }}
+                                style={{ backgroundColor: getServiceColor(intervenant.type_service) }}
                               >
-                                {getServiceIcon(intervenant.service)}
-                                <span>{getServiceLabel(intervenant.service)}</span>
+                                {getServiceIcon(intervenant.type_service)}
+                                <span>{getServiceLabel(intervenant.type_service)}</span>
                               </div>
                             </div>
                           </div>
@@ -514,10 +558,10 @@ function RechercheIntervenantsPage({ serviceType = null }) {
                             </div>
                             <div
                               className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm mb-3 w-full justify-center"
-                              style={{ backgroundColor: getServiceColor(intervenant.service) }}
+                              style={{ backgroundColor: getServiceColor(intervenant.type_service) }}
                             >
-                              {getServiceIcon(intervenant.service)}
-                              <span>{getServiceLabel(intervenant.service)}</span>
+                              {getServiceIcon(intervenant.type_service)}
+                              <span>{getServiceLabel(intervenant.type_service)}</span>
                             </div>
                             <div className="flex items-center gap-1 text-sm justify-center mb-2">
                               <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />

@@ -7,6 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
  * @param {string} params.ville - Filter by city
  * @param {string} params.type_service - Filter by service type (menuiserie, peinture, electricite)
  * @param {string} params.search - Search term for title or description
+ * @param {number|string} params.sub_service_id - Filter by sub-service id (new schema)
  * @returns {Promise<Array>} Array of services with intervenant data
  */
 export async function fetchServices(params = {}) {
@@ -24,6 +25,10 @@ export async function fetchServices(params = {}) {
 
         if (params.search) {
             queryParams.append('search', params.search);
+        }
+
+        if (params.sub_service_id) {
+            queryParams.append('sub_service_id', params.sub_service_id);
         }
 
         const url = `${API_BASE_URL}/search${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
@@ -93,6 +98,38 @@ export async function fetchArtisanProfile(id) {
         console.error('Error fetching artisan profile:', error);
         throw error;
     }
+}
+
+/**
+ * Fetch service types (menuiserie/electricite/peinture)
+ * @returns {Promise<Array>}
+ */
+export async function fetchServiceTypes() {
+    const url = `${API_BASE_URL}/service-types`;
+    const response = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await response.json();
+    if (!result.success) throw new Error('Failed to fetch service types');
+    return result.data;
+}
+
+/**
+ * Fetch sub-services (new schema)
+ * @param {Object} params
+ * @param {string} params.type_service - service type code (menuiserie/peinture/electricite)
+ * @param {number|string} params.service_type_id - service type id
+ * @returns {Promise<Array>}
+ */
+export async function fetchSubServices(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.type_service) queryParams.append('type_service', params.type_service);
+    if (params.service_type_id) queryParams.append('service_type_id', params.service_type_id);
+    const url = `${API_BASE_URL}/sub-services${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await response.json();
+    if (!result.success) throw new Error('Failed to fetch sub-services');
+    return result.data;
 }
 
 /**

@@ -20,6 +20,8 @@ class AuthController extends Controller
         'prenom' => 'required|string|max:100',
         'email' => 'required|email|unique:users',
         'telephone' => 'nullable|string|max:50',
+        'adresse' => 'nullable|string|max:255',
+        'ville' => 'nullable|string|max:150',
         'password' => 'required|min:8|confirmed',
         'role' => 'required|in:client,intervenant,admin',
         'metiers' => 'nullable|json', // ← CHANGÉ: 'metiers' pas 'metier'
@@ -68,6 +70,15 @@ class AuthController extends Controller
         ], 422);
     }
 
+    // Adresse requise pour les clients (pré-remplissage dans la demande)
+    if ($validated['role'] === 'client') {
+        if (empty($validated['adresse']) || empty($validated['ville'])) {
+            return response()->json([
+                'error' => 'Adresse et ville sont requises pour les clients'
+            ], 422);
+        }
+    }
+
     // Gestion de la photo
     $photoPath = null;
     if ($request->hasFile('photo_profil')) {
@@ -80,6 +91,8 @@ class AuthController extends Controller
         'prenom' => $validated['prenom'],
         'email' => $validated['email'],
         'telephone' => $validated['telephone'] ?? null,
+        'adresse' => $validated['adresse'] ?? null,
+        'ville' => $validated['ville'] ?? null,
         'mot_de_passe' => Hash::make($validated['password']),
         'role' => $validated['role'],
         'photo_profil' => $photoPath,
@@ -116,6 +129,8 @@ class AuthController extends Controller
             'prenom' => $user->prenom,
             'email' => $user->email,
             'role' => $user->role,
+            'adresse' => $user->adresse,
+            'ville' => $user->ville,
             'metiers' => $user->metiers->map(function ($metier) {
                 return [
                     'code' => $metier->code,
@@ -165,6 +180,8 @@ class AuthController extends Controller
                 'prenom' => $user->prenom,
                 'email' => $user->email,
                 'role' => $user->role,
+                'adresse' => $user->adresse,
+                'ville' => $user->ville,
                 'metiers' => $user->metiers->map(function ($metier) {
                     return [
                         'code' => $metier->code,
@@ -193,6 +210,8 @@ class AuthController extends Controller
                 'prenom' => $user->prenom,
                 'email' => $user->email,
                 'role' => $user->role,
+                'adresse' => $user->adresse,
+                'ville' => $user->ville,
                 'metiers' => $user->metiers->map(function ($metier) {
                     return [
                         'code' => $metier->code,

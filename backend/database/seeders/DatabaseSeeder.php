@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             UserSeeder::class,
+            ServiceTypeSeeder::class,
+            SubServiceSeeder::class,
             CategorieSeeder::class,
             UserMetierSeeder::class,  // Assign métiers to users
         ]);

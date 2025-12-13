@@ -12,6 +12,10 @@ class Service extends Model
     protected $fillable = [
         'intervenant_id',
         'type_service',
+        'service_type_id',
+        'sub_service_id',
+        'prix',
+        'unite_prix',
         'titre',
         'description',
         'image_principale',
@@ -33,12 +37,23 @@ class Service extends Model
         'rayon_km' => 'integer',
         'parametres_specifiques' => 'array',
         'images_supplementaires' => 'array',
+        'prix' => 'decimal:2',
     ];
 
     // Relations
     public function intervenant()
     {
         return $this->belongsTo(User::class, 'intervenant_id');
+    }
+
+    public function serviceType()
+    {
+        return $this->belongsTo(ServiceType::class, 'service_type_id');
+    }
+
+    public function subService()
+    {
+        return $this->belongsTo(SubService::class, 'sub_service_id');
     }
 
     public function serviceCategories()

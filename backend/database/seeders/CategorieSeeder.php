@@ -130,6 +130,56 @@ class CategorieSeeder extends Seeder
                 'description' => 'Terrasses, pergolas',
             ],
 
+            // Sous-services supplémentaires (objectif: 20 sous-services "service" minimum)
+            [
+                'type_service' => 'menuiserie',
+                'type_categorie' => 'service',
+                'nom' => 'Pose de cuisine',
+                'description' => 'Installation et ajustements de cuisines',
+            ],
+            [
+                'type_service' => 'menuiserie',
+                'type_categorie' => 'service',
+                'nom' => 'Pose de plinthes et moulures',
+                'description' => 'Pose et finitions des plinthes / moulures',
+            ],
+            [
+                'type_service' => 'menuiserie',
+                'type_categorie' => 'service',
+                'nom' => 'Dressing sur mesure',
+                'description' => 'Conception et pose de dressing',
+            ],
+            [
+                'type_service' => 'menuiserie',
+                'type_categorie' => 'service',
+                'nom' => 'Bibliothèque sur mesure',
+                'description' => 'Fabrication et pose de bibliothèque',
+            ],
+            [
+                'type_service' => 'menuiserie',
+                'type_categorie' => 'service',
+                'nom' => 'Réparation portes et fenêtres',
+                'description' => 'Réglage, réparation, remplacement de pièces',
+            ],
+            [
+                'type_service' => 'menuiserie',
+                'type_categorie' => 'service',
+                'nom' => 'Pose de porte blindée',
+                'description' => 'Installation de porte de sécurité',
+            ],
+            [
+                'type_service' => 'menuiserie',
+                'type_categorie' => 'service',
+                'nom' => 'Isolation et étanchéité menuiseries',
+                'description' => 'Jointage, calfeutrage, amélioration thermique/phonique',
+            ],
+            [
+                'type_service' => 'menuiserie',
+                'type_categorie' => 'service',
+                'nom' => 'Habillage escalier',
+                'description' => 'Habillage / rénovation d’escalier (marches, contremarches)',
+            ],
+
             // =====================================================
             // CATÉGORIES ÉLECTRICITÉ
             // =====================================================
@@ -198,6 +248,80 @@ class CategorieSeeder extends Seeder
                 'type_categorie' => 'materiel',
                 'nom' => 'Matériel haut de gamme',
                 'description' => 'Équipement premium',
+            ],
+
+            // Sous-services supplémentaires (objectif: 20 sous-services "service" minimum)
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Mise à la terre',
+                'description' => 'Création / réparation de la prise de terre',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Installation prises RJ45',
+                'description' => 'Réseau câblé (Ethernet) et baies de brassage',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Installation interphone/visiophone',
+                'description' => 'Pose et raccordement interphone/visiophone',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Installation alarme',
+                'description' => 'Pose et configuration alarme intrusion',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Installation caméra de surveillance',
+                'description' => 'Caméras IP / DVR, câblage et paramétrage',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Dépannage disjoncteur / différentiel',
+                'description' => 'Diagnostic et remplacement protections',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Ajout circuit / ligne dédiée',
+                'description' => 'Création d’un circuit (four, clim, chauffe-eau, etc.)',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Chauffe-eau électrique',
+                'description' => 'Installation / remplacement chauffe-eau',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'VMC',
+                'description' => 'Installation / remplacement VMC',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Portail / motorisation',
+                'description' => 'Alimentation et raccordement motorisation portail/garage',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Éclairage extérieur',
+                'description' => 'Installation éclairage jardin / façade',
+            ],
+            [
+                'type_service' => 'electricite',
+                'type_categorie' => 'service',
+                'nom' => 'Détection fumée (DAAF)',
+                'description' => 'Pose détecteurs de fumée et tests',
             ],
 
             // =====================================================
@@ -281,17 +405,95 @@ class CategorieSeeder extends Seeder
                 'nom' => 'Traitement anti-humidité',
                 'description' => 'Traitement spécialisé',
             ],
+
+            // Sous-services supplémentaires (objectif: 20 sous-services "service" minimum)
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Peinture boiseries',
+                'description' => 'Portes, plinthes, encadrements, meubles',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Peinture métalliques',
+                'description' => 'Garde-corps, portails, grilles (antirouille)',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Peinture plafond',
+                'description' => 'Préparation et peinture plafonds',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Ravalement façade',
+                'description' => 'Préparation + peinture façade / enduits',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Enduit de lissage',
+                'description' => 'Lissage murs/plafonds avant peinture',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Rebouchage fissures',
+                'description' => 'Réparation fissures et trous (rebouchage)',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Application sous-couche / primaire',
+                'description' => 'Préparation support avec primaire d’accrochage',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Peinture décorative',
+                'description' => 'Effets (stuc, tadelakt, béton ciré, etc.)',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Pose toile / fibre de verre (renfort)',
+                'description' => 'Renforcement murs et fissures par toile',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Traitement anti-moisissure',
+                'description' => 'Nettoyage + traitement fongicide',
+            ],
+            [
+                'type_service' => 'peinture',
+                'type_categorie' => 'service',
+                'nom' => 'Peinture sol (garage/terrasse)',
+                'description' => 'Peinture sols (résines, protections)',
+            ],
         ];
 
-        // Insert all categories
+        // Insert / update categories without duplicating entries
         foreach ($categories as $category) {
-            Categorie::create($category);
+            Categorie::updateOrCreate(
+                [
+                    'type_service' => $category['type_service'],
+                    'type_categorie' => $category['type_categorie'],
+                    'nom' => $category['nom'],
+                ],
+                [
+                    'description' => $category['description'] ?? null,
+                    'photo' => $category['photo'] ?? null,
+                ]
+            );
         }
 
         $this->command->info('✓ Categories seeded successfully!');
-        $this->command->info('  - Menuiserie: 17 categories');
-        $this->command->info('  - Électricité: 10 categories');
-        $this->command->info('  - Peinture: 12 categories');
-        $this->command->info('  Total: 39 categories');
+        $this->command->info('  - Menuiserie: ' . Categorie::where('type_service', 'menuiserie')->count() . ' categories');
+        $this->command->info('  - Électricité: ' . Categorie::where('type_service', 'electricite')->count() . ' categories');
+        $this->command->info('  - Peinture: ' . Categorie::where('type_service', 'peinture')->count() . ' categories');
+        $this->command->info('  Total: ' . Categorie::count() . ' categories');
     }
 }

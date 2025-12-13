@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API\Client;
 
 use App\Http\Controllers\Controller;
+use App\Models\ServiceType;
+use App\Models\SubService;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -20,6 +22,8 @@ class SearchController extends Controller
         $typeService = $request->input('type_service');
         $searchTerm = $request->input('search');
         $serviceId = $request->input('service_id');
+        $categoryId = $request->input('category_id'); // sous-service/category filter
+        $subServiceId = $request->input('sub_service_id'); // new normalized filter
 
         // Construire la requête pour récupérer les services actifs
         $query = Service::with([
@@ -27,14 +31,20 @@ class SearchController extends Controller
                 $query->select('id', 'nom', 'prenom', 'surnom', 'photo_profil', 'telephone');
             },
             'evaluations',   // Load evaluations for rating calculation
-            'categories',    // Load categories for pricing
+            'categories',    // Legacy categories for pricing/extras
+            'serviceType',
+            'subService',
             'disponibilites', // Load availability days
             'demandes'       // Load demandes for statistics
         ])
             ->where('est_actif', true)
-            ->where('statut', 'actif')
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude');
+            ->where('statut', 'actif');
+
+        // For map/list search we only return geolocated services to avoid Leaflet crashes.
+        // But when requesting a specific service by id (service_id=...), we allow missing coords.
+        if (!$serviceId) {
+            $query->whereNotNull('latitude')->whereNotNull('longitude');
+        }
 
         // Filtrer par ville si spécifié
         if ($ville) {
@@ -43,7 +53,26 @@ class SearchController extends Controller
 
         // Filtrer par type de service si spécifié
         if ($typeService) {
-            $query->where('type_service', $typeService);
+            // Prefer new schema when available, but keep legacy enum column too
+            $query->where(function ($q) use ($typeService) {
+                $q->where('type_service', $typeService)
+                  ->orWhereHas('serviceType', function ($qq) use ($typeService) {
+                      $qq->where('code', $typeService);
+                  });
+            });
+        }
+
+        // Filtrer par sous-service (new schema)
+        if ($subServiceId) {
+            $query->where('sub_service_id', $subServiceId);
+        }
+
+        // Filtrer par sous-service (category_id) si spécifié
+        // Note: category_id refers to categories.id (typically type_categorie=service)
+        if ($categoryId) {
+            $query->whereHas('categories', function ($q) use ($categoryId) {
+                $q->where('categories.id', $categoryId);
+            });
         }
 
         // Filtrer par ID de service si spécifié
@@ -74,7 +103,21 @@ class SearchController extends Controller
                 // Service information
                 'titre' => $service->titre ?? 'Service sans titre',
                 'description' => $service->description ?? '',
-                'type_service' => $service->type_service,
+                'type_service' => $service->serviceType?->code ?? $service->type_service,
+                // Needed for demande options pricing UI
+                'parametres_specifiques' => $service->parametres_specifiques,
+                'service_type' => $service->serviceType ? [
+                    'id' => $service->serviceType->id,
+                    'code' => $service->serviceType->code,
+                    'nom' => $service->serviceType->nom,
+                ] : null,
+                'sub_service' => $service->subService ? [
+                    'id' => $service->subService->id,
+                    'nom' => $service->subService->nom,
+                    'description' => $service->subService->description,
+                ] : null,
+                'prix' => $service->prix,
+                'unite_prix' => $service->unite_prix,
 
                 // Images (with fallbacks)
                 'image' => $service->image_principale
@@ -85,8 +128,8 @@ class SearchController extends Controller
                 // Location
                 'ville' => $service->ville,
                 'adresse' => $service->adresse,
-                'lat' => (float) $service->latitude,
-                'lng' => (float) $service->longitude,
+                'lat' => $service->latitude !== null ? (float) $service->latitude : null,
+                'lng' => $service->longitude !== null ? (float) $service->longitude : null,
 
                 // Intervenant information
                 'intervenant' => [
@@ -117,6 +160,8 @@ class SearchController extends Controller
                 'categories' => $service->categories->map(function ($category) {
                     return [
                         'id' => $category->id,
+                        // Needed for demande_items: references service_categories.id (pivot primary key)
+                        'service_categorie_id' => $category->pivot->id ?? null,
                         'nom' => $category->nom,
                         'type_categorie' => $category->type_categorie,
                         'prix' => $category->pivot->prix ?? null,

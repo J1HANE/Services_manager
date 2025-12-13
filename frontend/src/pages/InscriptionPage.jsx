@@ -19,6 +19,8 @@ function InscriptionPage() {
     prenom: '',
     email: '',
     telephone: '',
+    adresse: '',
+    ville: '',
     password: '',
     confirmPassword: '',
   });
@@ -130,6 +132,11 @@ const handleSubmit = async (e) => {
     formDataToSend.append('prenom', formData.prenom);
     formDataToSend.append('email', formData.email);
     formDataToSend.append('telephone', formData.telephone);
+    // Adresse client (pré-remplissage pour les demandes)
+    if (role === 'client') {
+      formDataToSend.append('adresse', formData.adresse);
+      formDataToSend.append('ville', formData.ville);
+    }
     formDataToSend.append('password', formData.password);
     formDataToSend.append('password_confirmation', formData.confirmPassword);
     formDataToSend.append('role', role);
@@ -398,6 +405,43 @@ const handleSubmit = async (e) => {
                         />
                       </div>
                     </div>
+
+                    {/* Adresse client */}
+                    {role === 'client' && (
+                      <div className="pt-6 border-t border-amber-200">
+                        <h3 className="mb-4 text-xl font-bold text-amber-900">
+                          Adresse (pour pré-remplir vos demandes) <span className="text-red-500">*</span>
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block mb-2 font-semibold text-amber-900">
+                              Adresse <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.adresse}
+                              onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+                              placeholder="Ex: 12 Rue Mohammed V"
+                              className="w-full py-3 px-4 transition-colors bg-white border-2 rounded-lg border-amber-200 focus:outline-none focus:border-amber-700"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block mb-2 font-semibold text-amber-900">
+                              Ville <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.ville}
+                              onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                              placeholder="Ex: Casablanca"
+                              className="w-full py-3 px-4 transition-colors bg-white border-2 rounded-lg border-amber-200 focus:outline-none focus:border-amber-700"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                    {role === 'intervenant' && (
   <div className="pt-6 border-t border-amber-200">
