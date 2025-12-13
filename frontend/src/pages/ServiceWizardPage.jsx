@@ -78,11 +78,12 @@ function ServiceWizardPage() {
     description: '',
     ville: '',
     adresse: '',
-    latitude: '',
-    longitude: '',
     image_principale: null,
     images_supplementaires: [],
   });
+
+  // Sous-services (étape 2 dynamique)
+  
 
   // Availability days (1=Monday, 7=Sunday)
   const [disponibilites, setDisponibilites] = useState([]);
@@ -200,6 +201,8 @@ function ServiceWizardPage() {
       };
 
       fetchBackendCategories();
+
+      // (no sous-services fetch here)
     }
   }, [categorie]);
 
@@ -225,6 +228,7 @@ function ServiceWizardPage() {
     }));
   };
 
+
   const handleCategorieToggle = (index) => {
     const newCategories = [...categoriesPrices];
     newCategories[index].selected = !newCategories[index].selected;
@@ -239,8 +243,8 @@ function ServiceWizardPage() {
 
   const validateStep = (step) => {
     if (step === 1) {
-      if (!formData.titre || !formData.description || !formData.ville || !formData.adresse) {
-        toast.error('Veuillez remplir tous les champs de l\'étape 1');
+      if (!formData.ville || !formData.adresse) {
+        toast.error('Veuillez remplir la ville et l\'adresse');
         return false;
       }
     } else if (step === 2) {
@@ -322,12 +326,33 @@ function ServiceWizardPage() {
 
       // Add basic fields
       formDataToSend.append('type_service', typeServiceMap[categorie]);
-      formDataToSend.append('titre', formData.titre);
-      formDataToSend.append('description', formData.description);
+
+      // Auto-generate titre and description from category + specificFields
+      const categoryLabel = categories.find(c => c.value === categorie)?.label || categorie;
+      let titreToSend = categoryLabel;
+      let descriptionToSend = `Prestations en ${categoryLabel}`;
+
+      if (categorie === 'menuisier') {
+        if (specificFields.typeBois) titreToSend += ` - ${specificFields.typeBois}`;
+        if (specificFields.finitions && specificFields.finitions.length) {
+          titreToSend += ` (${specificFields.finitions.slice(0,3).join(', ')})`;
+          descriptionToSend = `Travaux de menuiserie: types de bois (${specificFields.typeBois || 'divers'}); finitions: ${specificFields.finitions.join(', ')}.`;
+        } else {
+          descriptionToSend = `Travaux de menuiserie: types de bois ${specificFields.typeBois || 'divers'}.`;
+        }
+      } else if (categorie === 'peintre') {
+        if (specificFields.typesPeinture && specificFields.typesPeinture.length) titreToSend += ` - ${specificFields.typesPeinture.slice(0,2).join(', ')}`;
+        if (specificFields.surfaces && specificFields.surfaces.length) descriptionToSend = `Peinture pour surfaces: ${specificFields.surfaces.join(', ')}; types: ${specificFields.typesPeinture.join(', ')}.`;
+      } else if (categorie === 'electricien') {
+        if (specificFields.typesTravaux && specificFields.typesTravaux.length) titreToSend += ` - ${specificFields.typesTravaux.slice(0,2).join(', ')}`;
+        if (specificFields.typesTravaux && specificFields.typesTravaux.length) descriptionToSend = `Travaux électriques: ${specificFields.typesTravaux.join(', ')}.`;
+      }
+
+      formDataToSend.append('titre', titreToSend);
+      formDataToSend.append('description', descriptionToSend);
       formDataToSend.append('ville', formData.ville);
       formDataToSend.append('adresse', formData.adresse);
-      formDataToSend.append('latitude', formData.latitude ? parseFloat(formData.latitude) : '');
-      formDataToSend.append('longitude', formData.longitude ? parseFloat(formData.longitude) : '');
+      // latitude/longitude removed (not required)
       formDataToSend.append('rayon_km', '20');
 
       // Add images
@@ -346,6 +371,8 @@ function ServiceWizardPage() {
 
       // Add specific parameters
       formDataToSend.append('parametres_specifiques', JSON.stringify(specificFields));
+
+      // no sous_services to send (using specificFields/categories instead)
 
       // Add categories with pricing
       const categoriesData = selectedCategories.map(cat => ({
@@ -504,36 +531,18 @@ function ServiceWizardPage() {
               {/* Étape 1: Informations de base */}
               {currentStep === 1 && (
                 <div className="space-y-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Info className="w-6 h-6 text-amber-700" />
-                    <h2 className="text-2xl text-amber-900">Informations de base</h2>
-                  </div>
+                      <div className="flex items-center gap-3 mb-6">
+                        <Info className="w-6 h-6 text-amber-700" />
+                        <h2 className="text-2xl text-amber-900">Informations de base</h2>
+                      </div>
 
-                  <div>
-                    <label className="block text-amber-900 mb-2 font-semibold">
-                      Titre du service <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.titre}
-                      onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
-                      placeholder="Ex: Installation de placards sur mesure"
-                      className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-amber-900 mb-2 font-semibold">
-                      Description du service <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Décrivez votre service en détail..."
-                      rows={5}
-                      className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
-                    />
-                  </div>
+                      <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-lg">
+                        <p className="text-amber-900 font-semibold">Titre et description</p>
+                        <p className="text-amber-700 mt-2">
+                          Le titre et la description seront générés automatiquement à partir de la catégorie
+                          sélectionnée et des paramètres spécifiques (ex. type de bois, finitions, types de travaux).
+                        </p>
+                      </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -563,35 +572,7 @@ function ServiceWizardPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-amber-900 mb-2 font-semibold">
-                        Latitude
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={formData.latitude}
-                        onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                        placeholder="Ex: 34.2610"
-                        className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-amber-900 mb-2 font-semibold">
-                        Longitude
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={formData.longitude}
-                        onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                        placeholder="Ex: -6.5802"
-                        className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-600 transition-colors"
-                      />
-                    </div>
-                  </div>
+                  {/* Latitude/Longitude removed per new requirements */}
 
                   {/* Image Upload Section */}
                   <div className="space-y-4 mt-6 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
@@ -733,7 +714,7 @@ function ServiceWizardPage() {
                     <h2 className="text-2xl text-amber-900">Catégorie & Type de Service</h2>
                   </div>
 
-                  {/* Sélection de la catégorie */}
+                  {/* Sélection de la catégorie (placée ici) */}
                   <div>
                     <label className="block text-amber-900 mb-3 font-semibold">
                       Sélectionnez votre catégorie <span className="text-red-500">*</span>
@@ -747,26 +728,28 @@ function ServiceWizardPage() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {allowedCategories.map((cat) => {
-                        const Icon = cat.icon;
-                        return (
-                          <button
-                            key={cat.value}
-                            type="button"
-                            onClick={() => handleCategorieChange(cat.value)}
-                            className={`p-6 rounded-xl border-2 transition-all ${categorie === cat.value
-                              ? `border-${cat.color}-600 bg-${cat.color}-50 shadow-lg`
-                              : `border-amber-200 hover:border-${cat.color}-400`
-                              }`}
-                          >
-                            <Icon className={`w-10 h-10 mx-auto mb-3 ${categorie === cat.value ? `text-${cat.color}-700` : 'text-amber-600'
-                              }`} />
-                            <div className="font-semibold text-amber-900">{cat.label}</div>
-                          </button>
-                        );
-                      })}
+                          const Icon = cat.icon;
+                          return (
+                            <button
+                              key={cat.value}
+                              type="button"
+                              onClick={() => handleCategorieChange(cat.value)}
+                              className={`p-6 rounded-xl border-2 transition-all ${categorie === cat.value
+                                ? `border-${cat.color}-600 bg-${cat.color}-50 shadow-lg`
+                                : `border-amber-200 hover:border-${cat.color}-400`
+                                }`}
+                            >
+                              <Icon className={`w-10 h-10 mx-auto mb-3 ${categorie === cat.value ? `text-${cat.color}-700` : 'text-amber-600'
+                                }`} />
+                              <div className="font-semibold text-amber-900">{cat.label}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
+
+                  
 
                   {/* Champs spécifiques selon la catégorie */}
                   {categorie === 'menuisier' && (
@@ -1022,7 +1005,7 @@ function ServiceWizardPage() {
                   <button
                     type="button"
                     onClick={handleNext}
-                    disabled={currentStep === 2 && cannotProceed}
+                    disabled={currentStep === 1 && cannotProceed}
                     className={`flex-1 px-6 py-4 ${colors.bg} text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     Suivant
